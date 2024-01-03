@@ -307,16 +307,15 @@ namespace RedSaw.CommandLineInterface{
 
         /// <summary>collect all commands from execution position</summary>
         /// <returns>return all commands</returns>
-        public static IEnumerable<Command> CollectCommands(){
+        public static IEnumerable<Command> CollectCommands<T>() where T: CommandAttribute{
 
             Type[] totalTypes = Assembly.GetExecutingAssembly().GetTypes();
             RegisterParameterParsers(totalTypes);
             foreach(Type type in totalTypes){
-                
                 MethodInfo[] methods = type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
                 if(methods.Length == 0)continue;
                 foreach(MethodInfo method in methods){
-                    var attr = method.GetCustomAttribute<CommandAttribute>();
+                    var attr = method.GetCustomAttribute<T>();
                     if(attr == null)continue;
                     if(CreateCommand(method, attr, out Command command)){
                         yield return command;
@@ -477,9 +476,65 @@ namespace RedSaw.CommandLineInterface{
     /// <summary>command system</summary>
     public static class CommandSystem{
 
+        /// <summary>
+        /// provide the most basic command of current system
+        /// </summary>
+        static class DefaultCommandDef{
+
+            [DefaultCommand("print")]
+            static void Print(string value) => Output(value);
+
+            [DefaultCommand("add", Desc = "just for parameter test")]
+            static void Add(int a, int b) => Output((a + b).ToString());
+
+            [DefaultCommand("help")]
+            static void Help(){
+                Output("you can use 'query <str>' to fetch the commands contains the <str>");
+                Output("if you redefined the 'query' command, then it won't work");
+                Output("you can get more information from 'https://github.com/529324416/UnityCommandLineInterface'");
+            }
+
+            [DefaultCommand("logo")]
+            static void Logo(){
+
+                /*
+                    _____          _  _____                 _____ _             _ _       
+                    |  __ \        | |/ ____|               / ____| |           | (_)      
+                    | |__) |___  __| | (___   __ ___      _| (___ | |_ _   _  __| |_  ___  
+                    |  _  // _ \/ _` |\___ \ / _` \ \ /\ / /\___ \| __| | | |/ _` | |/ _ \ 
+                    | | \ \  __/ (_| |____) | (_| |\ V  V / ____) | |_| |_| | (_| | | (_) |
+                    |_|  \_\___|\__,_|_____/ \__,_| \_/\_/ |_____/ \__|\__,_|\__,_|_|\___/ 
+                */
+                Output(" _____          _  _____                 _____ _             _ _        ");
+                Output("|  __ \\        | |/ ____|               / ____| |           | (_)      ");
+                Output("| |__) |___  __| | (___   __ ___      _| (___ | |_ _   _  __| |_  ___  ");
+                Output("|  _  // _ \\/ _` |\\___ \\ / _` \\ \\ /\\ / /\\___ \\| __| | | |/ _` | |/ _ \\ ");
+                Output("| | \\ \\  __/ (_| |____) | (_| |\\ V  V / ____) | |_| |_| | (_| | | (_) |");
+                Output("|_|  \\_\\___|\\__,_|_____/ \\__,_| \\_/\\_/ |_____/ \\__|\\__,_|\\__,_|_|\\___/ ");
+            }
+
+            [DefaultCommand("query", Desc = "use as 'query <name:str> [<query_count:int>]'")]
+            static void Query(string name, int totalCount = 20){
+
+                if(name == null || name.Length == 0){
+                    OutputErr("you should input a command name");
+                    return;
+                }
+                foreach(var cmd in commands){
+                    if(totalCount -- <= 0)break;
+                    if(cmd.Key.Contains(name)){
+                        Output(cmd.Value.ToString());
+                    }
+                }
+            }
+        }
+
         static readonly Dictionary<string, Command> commands = new();
         static readonly CommandParser parser = new();
-        static Action<string> log = null;
+        static Action<string> output;
+        static Action<string> outputErr;
+        static void Output(string message) => output?.Invoke(message);
+        static void OutputErr(string message) => outputErr?.Invoke(message);
 
         /// <summary>get all commands' informations</summary>
         public static IEnumerable<CommandInfo> TotalCommands{
@@ -492,7 +547,7 @@ namespace RedSaw.CommandLineInterface{
 
         static CommandSystem(){
 
-            foreach(var command in CommandCreator.CollectCommands()){
+            foreach(var command in CommandCreator.CollectCommands<CommandAttribute>()){
                 if(commands.ContainsKey(command.name)){
                     commands[command.name] = command;
                     continue;
@@ -501,7 +556,13 @@ namespace RedSaw.CommandLineInterface{
             }
         }
 
-        static void Log(string message) => log?.Invoke(message);
+        public static void CollectDefaultCommand(){
+
+            foreach(var command in CommandCreator.CollectCommands<DefaultCommandAttribute>()){
+                if(commands.ContainsKey(command.name))continue;
+                commands.Add(command.name, command);
+            }
+        }
 
         /// <summary>execute given command</summary>
         /// <param name="input">the command you want to execute</param>
@@ -509,12 +570,12 @@ namespace RedSaw.CommandLineInterface{
         public static bool Execute(string input){
 
             if(!parser.Parse(input, out string[] result)){
-                Log($"invalid command: {input} ");
+                OutputErr($"invalid command: {input} ");
                 return false;
             }
             string commandName = result[0];
             if(!commands.TryGetValue(commandName, out Command command)){
-                Log($"unknown command name: {commandName}");
+                OutputErr($"unknown command name: {commandName}");
                 return false;
             }
             Exception e;
@@ -528,16 +589,41 @@ namespace RedSaw.CommandLineInterface{
                 e = command.Execute(args);
             }
             if(e != null){
-                Log($"command error : {e.Message}");
-                Log(e.StackTrace);
+                OutputErr($"command error : {e.Message}");
+                OutputErr(e.StackTrace);
                 return false;
             }
             return true;
         }
 
+        /// <summary>execute given command</summary>
+        /// <param name="input">the command you want to execute</param>
+        /// <returns>if success</returns>
+        public static bool ExecuteSlience(string input){
+
+            if(!parser.Parse(input, out string[] result))return false;
+            if(!commands.TryGetValue(result[0], out Command command))return false;
+            Exception e;
+            if(result.Length == 1){
+                e = command.Execute(new string[]{});
+            }else{
+                string[] args = new string[result.Length - 1];
+                for(int i = 1; i < result.Length; i ++){
+                    args[i - 1] = result[i];
+                }
+                e = command.Execute(args);
+            }
+            return e == null;
+        }
+
+
+        /// <summary>you can set a output function of CommandSystem
+        /// to receive normal message </summary>
+        public static void SetOutputFunc(Action<string> func) => output = func;
+
         /// <summary>you can set a output function of CommandSystem
         /// to receive error message </summary>
-        public static void SetOutputFunc(Action<string> func) => log = func;
+        public static void SetOutputErrFunc(Action<string> func) => outputErr = func;
 
         /// <summary>query a group of commands with top score of all commands</summary>
         /// <param name="query">query string</param>

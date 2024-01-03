@@ -16,8 +16,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             set{
                 textPanel.text = string.Empty;
                 if(options == null || options.Count == 0)return;
-
-                value = Mathf.Clamp(value, 0, options.Count);
                 string output = string.Empty;
                 for(int i = 0; i < options.Count; i ++){
                     if(i == value){
@@ -32,9 +30,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
 
         /// <summary>render current alternative options</summary>
         public void SetOptions(List<string> values){
-
             this.options = values;
-            this.SelectionIndex = 0;
         }
     }
 }

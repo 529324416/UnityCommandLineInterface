@@ -16,6 +16,11 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         private int outputPanelCapacity = 400;
         private int lineCount = 0;
 
+        public bool IsVisible { 
+            get => gameObject.activeSelf; 
+            set => gameObject.SetActive(value); 
+        }
+
         public bool IsInputFieldFocus => inputField.isFocused;
 
         public int OutputPanelCapacity { 

@@ -24,10 +24,15 @@ namespace RedSaw.CommandLineInterface{
 
         /// <summary>push esc or other keys to quit focus on console</summary>
         bool QuitFocus{ get; }
+
+        /// <summary>push F1 or other keys to show or hide console</summary>
+        bool ShowOrHide{ get; }
     }
 
     /// <summary>define the interface of console renderer</summary>
     public interface IConsoleRenderer{
+
+        bool IsVisible{ get; set; }
 
         #region InputField
 
@@ -117,6 +122,11 @@ namespace RedSaw.CommandLineInterface{
         /// <returns>if command executed</returns>
         bool Execute(string command);
 
+        /// <summary>execute command, but don't output any error informations</summary>
+        /// <param name="command">command string</param>
+        /// <returns>if command executed</returns>
+        bool ExecuteSlience(string command);
+
         /// <summary>query commands</summary>
         /// <param name="command">command string</param>
         /// <param name="count">count of alternative commands</param>
@@ -127,5 +137,11 @@ namespace RedSaw.CommandLineInterface{
         /// <summary>set output function</summary>
         /// <param name="outputFunc">output function</param>
         void SetOutputFunc(Action<string> outputFunc);
+
+        /// <summary>set output error function</summary>
+        /// <param name="outputFunc">output function</param>
+        void SetOutputErrFunc(Action<string> outputFunc);
+
+        void UseDefualtCommand();
     }
 }

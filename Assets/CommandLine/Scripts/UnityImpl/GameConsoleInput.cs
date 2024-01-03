@@ -8,5 +8,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         public bool MoveUp => Input.GetKeyDown(KeyCode.UpArrow);
         public bool MoveDown => Input.GetKeyDown(KeyCode.DownArrow);
         public bool QuitFocus => Input.GetKeyDown(KeyCode.Escape);
+        public bool ShowOrHide => Input.GetKeyDown(KeyCode.F1);
     }
 }

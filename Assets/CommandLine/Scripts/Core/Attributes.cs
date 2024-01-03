@@ -25,6 +25,16 @@ namespace RedSaw.CommandLineInterface{
     }
 
     /// <summary>
+    /// the command defined in core module
+    /// it could be dismiss by client
+    /// </summary>
+    class DefaultCommandAttribute : CommandAttribute{
+
+        public DefaultCommandAttribute(string name) : base(name){}
+        public DefaultCommandAttribute() : base(){}
+    }
+
+    /// <summary>
     /// a static method which defined this attribute would be treated as
     /// parameter parser.
     /// </summary>

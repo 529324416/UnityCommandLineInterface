@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEngine;
 
 namespace RedSaw.CommandLineInterface{
 
@@ -48,36 +50,66 @@ namespace RedSaw.CommandLineInterface{
     class LinearSelector{
 
         public event Action<int> OnSelectionChanged;
-        int totalCount;
+        readonly List<string> optionsBuffer;
         int currentIndex;
 
-        public int SelectionIndex => currentIndex;
-
-        public LinearSelector(){
-            this.totalCount = 1;
-            this.currentIndex = 0;
+        int TotalCount{
+            get{
+                if(optionsBuffer == null)return 0;
+                return optionsBuffer.Count;
+            }
         }
 
         /// <summary>
-        /// set current alternative options, and it must have
-        /// at least one choice 
+        /// the current selection of the alternative options
+        /// if value is -1, it means there's no alternative options choosed
         /// </summary>
-        public void SetTotalCount(int count){
-            this.totalCount = Math.Max(count, 1);
-            this.currentIndex = 0;
+        public int SelectionIndex => currentIndex;
+
+        public LinearSelector(){
+
+            this.optionsBuffer = new();
+            this.currentIndex = -1;
+        }
+
+        public void LoadOptions(List<string> options){
+
+            this.optionsBuffer.Clear();
+            this.optionsBuffer.AddRange(options);
+            this.currentIndex = -1;
+        }
+
+        public bool GetCurrentSelection(out string selection){
+
+            selection = string.Empty;
+            if(currentIndex == -1)return false;
+            selection = optionsBuffer[currentIndex];
+            return true;
         }
 
         /// <summary>move to next alternative option</summary>
         public void MoveNext(){
 
-            currentIndex = currentIndex < totalCount - 1 ? currentIndex + 1 : 0;
+            if(TotalCount == 0)return;
+            if(currentIndex == -1){
+                currentIndex = 0;
+                OnSelectionChanged?.Invoke(currentIndex);
+                return;
+            }
+            currentIndex = currentIndex < TotalCount - 1 ? currentIndex + 1 : 0;
             OnSelectionChanged?.Invoke(currentIndex);
         }
 
         /// <summary>move to last alternative option</summary>
         public void MoveLast(){
 
-            currentIndex = currentIndex > 0 ? currentIndex - 1 : totalCount - 1;
+            if(TotalCount == 0)return;
+            if(currentIndex == -1){
+                currentIndex = TotalCount - 1;
+                OnSelectionChanged?.Invoke(currentIndex);
+                return;
+            }
+            currentIndex = currentIndex > 0 ? currentIndex - 1 : TotalCount - 1;
             OnSelectionChanged?.Invoke(currentIndex);
         }
     }
@@ -95,7 +127,10 @@ namespace RedSaw.CommandLineInterface{
                 }
             }
             public bool Execute(string command) => CommandSystem.Execute(command);
+            public bool ExecuteSlience(string command) => CommandSystem.ExecuteSlience(command);
+
             public void SetOutputFunc(Action<string> outputFunc) => CommandSystem.SetOutputFunc(outputFunc);
+            public void SetOutputErrFunc(Action<string> outputFunc) => CommandSystem.SetOutputErrFunc(outputFunc);
             public List<(string, string)> Query(string input, int count)
             {
                 var commands = CommandSystem.QueryCommands(input, count, CLIUtils.SimpleFilter);
@@ -105,6 +140,7 @@ namespace RedSaw.CommandLineInterface{
                 }
                 return result;
             }
+            public void UseDefualtCommand() => CommandSystem.CollectDefaultCommand();
         }
 
 
@@ -121,7 +157,6 @@ namespace RedSaw.CommandLineInterface{
 
         readonly InputHistory inputHistory;
         readonly LinearSelector selector;
-        readonly List<string> optionsBuffer;
         bool throwTextChanged = false;
 
         public string TimeInfo{
@@ -135,6 +170,7 @@ namespace RedSaw.CommandLineInterface{
         }
 
         public IEnumerable<string> TotalCommandInfos => commandSystem.CommandInfos;
+        public ICommandSystem CurrentCommandSystem => commandSystem;
 
         public Console(
             IConsoleRenderer renderer, 
@@ -144,31 +180,41 @@ namespace RedSaw.CommandLineInterface{
             int alternativeCommandCount = 8,
             bool shouldRecordFailedCommand = true,
             int outputPanelCapacity = 400,
-            bool outputWithTime = true
+            bool outputWithTime = true,
+            bool useDefualtCommand = true
         ){
-            this.commandSystem = commandSystem ?? new CmdImpl();
+            // about renderer
             this.renderer = renderer;
-            this.userInput = userInput;
-            inputHistory = new InputHistory(memoryCapacity);
-            selector = new LinearSelector();
-            optionsBuffer = new();
-            
-            this.alternativeCommandCount = alternativeCommandCount;
-            this.shouldRecordFailedCommand = shouldRecordFailedCommand;
-            this.outputWithTime = outputWithTime;
-
-            renderer.OutputPanelCapacity = outputPanelCapacity;
+            renderer.OutputPanelCapacity = Mathf.Max(outputPanelCapacity, 100);
             renderer.BindOnSubmit(OnSubmit);
             renderer.BindOnTextChanged(OnTextChanged);
-            this.commandSystem.SetOutputFunc(s => {
-                Output(s, "#ff0000");
-            });
+
+            // about command system
+            this.commandSystem = commandSystem ?? new CmdImpl();
+            this.commandSystem.SetOutputFunc(s => Output(s));
+            this.commandSystem.SetOutputErrFunc(s => Output(s, "#ff0000"));
+            if(useDefualtCommand)this.commandSystem.UseDefualtCommand();
+
+            // other things
+            this.userInput = userInput;
+            inputHistory = new InputHistory(Math.Max(memoryCapacity, 2));
+            
+            selector = new LinearSelector();
             this.selector.OnSelectionChanged += idx => {
                 renderer.AlternativeOptionsIndex = idx;
                 renderer.MoveCursorToEnd();
             };
+            
+            this.alternativeCommandCount = Math.Max(alternativeCommandCount, 1);
+            this.shouldRecordFailedCommand = shouldRecordFailedCommand;
+            this.outputWithTime = outputWithTime;
         }
         public void Update(){
+
+            if(userInput.ShowOrHide){
+                renderer.IsVisible = !renderer.IsVisible;
+            }
+            if(!renderer.IsVisible)return;
 
             if(renderer.IsInputFieldFocus){
 
@@ -268,7 +314,7 @@ namespace RedSaw.CommandLineInterface{
             }
 
             /* show options panel */
-            optionsBuffer.Clear();
+            var optionsBuffer = new List<string>();
             var list = new List<string>();
             foreach(var elem in result){
                 optionsBuffer.Add(elem.Item1);
@@ -277,22 +323,24 @@ namespace RedSaw.CommandLineInterface{
             if(!renderer.IsAlternativeOptionsActive){
                 renderer.IsAlternativeOptionsActive = true;
             }
-            selector.SetTotalCount(optionsBuffer.Count);
+            selector.LoadOptions(optionsBuffer);
             renderer.AlternativeOptions = list;
-            // renderer.SetInputCursorPosition(renderer.InputText.Length - 1);
+            renderer.AlternativeOptionsIndex = selector.SelectionIndex;
         }
 
 
         /// <summary>input string into current console</summary>
         public void OnSubmit(string text){
 
-            if(renderer.IsAlternativeOptionsActive){
-                renderer.InputText = optionsBuffer[selector.SelectionIndex];
+            if(renderer.IsAlternativeOptionsActive && selector.GetCurrentSelection(out string selection)){
+                renderer.InputText = selection;
                 renderer.IsAlternativeOptionsActive = false;
                 renderer.ActivateInput();
                 renderer.SetInputCursorPosition(renderer.InputText.Length);
                 return;
             }
+
+            if(renderer.IsAlternativeOptionsActive)renderer.IsAlternativeOptionsActive = false;
 
             Output(text);
             if(text.Length > 0){
