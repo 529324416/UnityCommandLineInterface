@@ -44,6 +44,7 @@ namespace RedSaw.CommandLineInterface{
         }
     }
 
+
     /// <summary>command selector</summary>
     class LinearSelector{
 
