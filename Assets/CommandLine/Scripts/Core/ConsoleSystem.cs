@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace RedSaw.CommandLineInterface{
 
@@ -86,6 +85,29 @@ namespace RedSaw.CommandLineInterface{
     /// <summary>command console</summary>
     public class Console{
 
+        class CmdImpl : ICommandSystem
+        {
+            public IEnumerable<string> CommandInfos{
+                get{
+                    foreach(var cmd in CommandSystem.TotalCommands){
+                        yield return $"{cmd.Name}: {cmd.Description}";
+                    }
+                }
+            }
+            public bool Execute(string command) => CommandSystem.Execute(command);
+            public void SetOutputFunc(Action<string> outputFunc) => CommandSystem.SetOutputFunc(outputFunc);
+            public List<(string, string)> Query(string input, int count)
+            {
+                var commands = CommandSystem.QueryCommands(input, count, CLIUtils.SimpleFilter);
+                var result = new List<(string, string)>();
+                foreach(var command in commands){
+                    result.Add((command.Name, command.Description));
+                }
+                return result;
+            }
+        }
+
+
         public event Action OnFocusOut;
         public event Action OnFocus;
 
@@ -100,7 +122,6 @@ namespace RedSaw.CommandLineInterface{
         readonly InputHistory inputHistory;
         readonly LinearSelector selector;
         readonly List<string> optionsBuffer;
-
         bool throwTextChanged = false;
 
         public string TimeInfo{
@@ -116,16 +137,16 @@ namespace RedSaw.CommandLineInterface{
         public IEnumerable<string> TotalCommandInfos => commandSystem.CommandInfos;
 
         public Console(
-            ICommandSystem commandSystem,
             IConsoleRenderer renderer, 
             IConsoleInput userInput,
-            int memoryCapacity = 50,
+            ICommandSystem commandSystem = null,
+            int memoryCapacity = 20,
             int alternativeCommandCount = 8,
             bool shouldRecordFailedCommand = true,
             int outputPanelCapacity = 400,
             bool outputWithTime = true
         ){
-            this.commandSystem = commandSystem;
+            this.commandSystem = commandSystem ?? new CmdImpl();
             this.renderer = renderer;
             this.userInput = userInput;
             inputHistory = new InputHistory(memoryCapacity);
@@ -195,8 +216,7 @@ namespace RedSaw.CommandLineInterface{
         public void Output(string[] msg, string color = "#ffffff"){
 
             if(outputWithTime){
-                var time = DateTime.Now;
-                var timeInfo = $"[{time.Hour}:{time.Minute}:{time.Second}] ";
+                var timeInfo = TimeInfo;
                 for(int i = 0; i < msg.Length; i ++){
                     msg[i] = timeInfo + msg[i];
                 }
@@ -210,8 +230,7 @@ namespace RedSaw.CommandLineInterface{
         public void Output(string[] msg){
 
             if(outputWithTime){
-                var time = DateTime.Now;
-                var timeInfo = $"[{time.Hour}:{time.Minute}:{time.Second}] ";
+                var timeInfo = TimeInfo;
                 for(int i = 0; i < msg.Length; i ++){
                     msg[i] = timeInfo + msg[i];
                 }
@@ -223,30 +242,6 @@ namespace RedSaw.CommandLineInterface{
 
         /// <summary>clear current console</summary>
         public void ClearOutputPanel() => renderer.Clear();
-
-        /// <summary>input string into current console</summary>
-        public void OnSubmit(string text){
-
-            if(renderer.IsAlternativeOptionsActive){
-                renderer.InputText = optionsBuffer[selector.SelectionIndex];
-                renderer.IsAlternativeOptionsActive = false;
-                renderer.ActivateInput();
-                renderer.SetInputCursorPosition(renderer.InputText.Length);
-                return;
-            }
-
-            Output(text);
-            if(text.Length > 0){
-                if(commandSystem.Execute(text)){
-                    inputHistory.Record(text);
-                }else{
-                    if(shouldRecordFailedCommand)inputHistory.Record(text);
-                }
-                renderer.ActivateInput();
-                renderer.InputText = string.Empty;
-                renderer.MoveScrollBarToEnd();
-            }
-        }
 
         public void OnTextChanged(string text){
             /* when input new string, should query commands from commandSystem */
@@ -285,6 +280,31 @@ namespace RedSaw.CommandLineInterface{
             selector.SetTotalCount(optionsBuffer.Count);
             renderer.AlternativeOptions = list;
             // renderer.SetInputCursorPosition(renderer.InputText.Length - 1);
+        }
+
+
+        /// <summary>input string into current console</summary>
+        public void OnSubmit(string text){
+
+            if(renderer.IsAlternativeOptionsActive){
+                renderer.InputText = optionsBuffer[selector.SelectionIndex];
+                renderer.IsAlternativeOptionsActive = false;
+                renderer.ActivateInput();
+                renderer.SetInputCursorPosition(renderer.InputText.Length);
+                return;
+            }
+
+            Output(text);
+            if(text.Length > 0){
+                if(commandSystem.Execute(text)){
+                    inputHistory.Record(text);
+                }else{
+                    if(shouldRecordFailedCommand)inputHistory.Record(text);
+                }
+                renderer.ActivateInput();
+                renderer.InputText = string.Empty;
+                renderer.MoveScrollBarToEnd();
+            }
         }
     }
 }

@@ -27,11 +27,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             get => inputField.text;
             set => inputField.text = value;
         }
-
-        public Vector2 Position { 
-            get => transform.position;
-            set => transform.position = value;
-        }
         public bool IsAlternativeOptionsActive { 
             get => optionsPanel.gameObject.activeSelf;
             set => optionsPanel.gameObject.SetActive(value);
@@ -156,7 +151,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         {
             Output($"<color={color}>{msg}</color>");
         }
-
         public void Output(string[] msgs, string color = "#ffffff"){
 
             string msg = string.Empty;

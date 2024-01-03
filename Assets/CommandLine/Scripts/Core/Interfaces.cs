@@ -19,9 +19,6 @@ namespace RedSaw.CommandLineInterface{
         /// <summary>push down to get history input or change selection of alternative options</summary>
         bool MoveDown{ get; }
 
-        /// <summary>push enter to submit input</summary>
-        bool Submit{ get; }
-
         /// <summary>push ctrl+c or other keys to focus on console</summary>
         bool Focus{ get; }
 

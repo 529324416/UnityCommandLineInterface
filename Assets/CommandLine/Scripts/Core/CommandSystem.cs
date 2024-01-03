@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 
 namespace RedSaw.CommandLineInterface{
 
@@ -547,7 +546,7 @@ namespace RedSaw.CommandLineInterface{
         /// <returns>return a group of commands</returns>
         public static CommandInfo[] QueryCommands(string query, int count, Func<string, string, int> scoreFunc){
 
-            count = Mathf.Max(1, count);
+            count = Math.Max(1, count);
             var bestChoices = commands.Select(s => new {value = s, score = scoreFunc(query, s.Key)}).Where(s => s.score > 0).OrderByDescending(s => s.score).Take(count).ToArray();
             return bestChoices.Select(s => s.value.Value.CommandInfo).ToArray();
         }
