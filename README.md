@@ -28,8 +28,18 @@ The project use Attribute and Reflection to define and collect commands, you can
 
 ``````c#
 
-[Command("test_command")]
+[Command]
 static void MyCommand(){
+    UnityEngine.Debug.Log("hello world");
+}
+
+[Command("test_command")]
+static void DefinedCommandName(){
+    UnityEngine.Debug.Log("hello world");
+}
+
+[Command("test_command2", Desc = "add some descriptions here")]
+static void AddSomeDescriptions(){
     UnityEngine.Debug.Log("hello world");
 }
 
