@@ -45,8 +45,9 @@ static void AddSomeDescriptions(){
 
 ``````
 之后你就可以通过命令行找到这个命令,之间不再需要额外的操作或者配置,如下图所示:
+
 <div align=center>
-<img src="./Res/屏幕截图 2024-01-04 055405.png" style="zoom:80%" />
+<img src="./Res/屏幕截图 2024-01-04 064500.png" style="zoom:80%" />
 </div>
 
 ### 命令函数的参数
@@ -103,7 +104,7 @@ static bool MyEnumParser(string value, out object data){
 之后你就可以使用这个命令了，如下图所示：
 
 <div align=center>
-<img src="./Res/屏幕截图 2024-01-04 061121.png" style="zoom:80%" />
+<img src="./Res/屏幕截图 2024-01-04 064808.png" style="zoom:80%" />
 </div>
 
 ## 自定义命令行系统

@@ -2,8 +2,18 @@ using RedSaw.CommandLineInterface;
 
 public static class CommandDef{
     
-    [Command("test_command", Desc = "just for testing")]
-	static void MyCommand(){
+    [Command]
+    static void MyCommand(){
+        UnityEngine.Debug.Log("hello world");
+    }
+
+    [Command("test_command")]
+    static void DefinedCommandName(){
+        UnityEngine.Debug.Log("hello world");
+    }
+
+    [Command("test_command2", Desc = "add some descriptions here")]
+    static void AddSomeDescriptions(){
         UnityEngine.Debug.Log("hello world");
     }
 
@@ -18,8 +28,8 @@ public static class CommandDef{
         return false;
     }
 
-    [Command("test_command2")]
-    static void MyCommand2(MyEnum value){
+    [Command]
+    static void TestCommand(MyEnum value){
         UnityEngine.Debug.Log(value.ToString());
     }
 }
