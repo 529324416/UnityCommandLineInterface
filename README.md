@@ -2,6 +2,14 @@
 
 [Chinese Document](./README-ch.md)
 
+## TODO List
+
+- Add Command Tag Defination v0.11
+- Add More Console Renderer Features v0.2
+- Listen Unity Debug.Log's message output v0.21
+
+## Summary
+
 The project is an inner game command line system, here are some screenshots of it.
 
 <div align=center>
