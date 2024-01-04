@@ -53,8 +53,7 @@ then you can use the command by inputting it into the console like this, there's
 
 ### The parameters of Command methods
 
-Not all static methods could be recognized as command, the method's parameter list can only use the types defined below:
-
+Not all static methods could be recognized as command, the method's parameter list can only use the types defined below. 
 ```
 Int
 String
@@ -71,7 +70,8 @@ ULong
 Decimal
 SByte
 ```
-But if you want some methods with other types of parameters to be recognized as well, you can register a parser function to the CommandSystem. for example, you have a command method with `Enum` type parameter like this:
+
+Actually, these types are sufficient for use in most cases. But if you want some methods with other types of parameters to be recognized as well, you can register a parser function to the CommandSystem. for example, you have a command method with `Enum` type parameter like this:
 
 ``````c#
 [Command]
