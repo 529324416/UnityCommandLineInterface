@@ -31,7 +31,7 @@ namespace RedSaw.CommandLineInterface{
         public string Last{
             get{
                 if(history.Count == 0)return string.Empty;
-                if(lastIndex < 0)lastIndex = history.Count - 1;
+                if(lastIndex < 0 || lastIndex >= history.Count)lastIndex = history.Count - 1;
                 return history[lastIndex --];
             }
         }
@@ -39,7 +39,7 @@ namespace RedSaw.CommandLineInterface{
         public string Next{
             get{
                 if(history.Count == 0)return string.Empty;
-                if(lastIndex >= history.Count - 1)lastIndex = 0;
+                if(lastIndex >= history.Count || lastIndex < 0)lastIndex = 0;
                 return history[lastIndex ++];
             }
         }
@@ -181,7 +181,7 @@ namespace RedSaw.CommandLineInterface{
             bool shouldRecordFailedCommand = true,
             int outputPanelCapacity = 400,
             bool outputWithTime = true,
-            bool useDefualtCommand = true
+            bool useDefaultCommand = true
         ){
             // about renderer
             this.renderer = renderer;
@@ -193,7 +193,7 @@ namespace RedSaw.CommandLineInterface{
             this.commandSystem = commandSystem ?? new CmdImpl();
             this.commandSystem.SetOutputFunc(s => Output(s));
             this.commandSystem.SetOutputErrFunc(s => Output(s, "#ff0000"));
-            if(useDefualtCommand)this.commandSystem.UseDefualtCommand();
+            if(useDefaultCommand)this.commandSystem.UseDefualtCommand();
 
             // other things
             this.userInput = userInput;

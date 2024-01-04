@@ -1441,13 +1441,13 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 1
     m_MaxSize: 40
-    m_Alignment: 4
+    m_Alignment: 3
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: game console
+  m_Text: terminal
 --- !u!1 &1814617177568028570
 GameObject:
   m_ObjectHideFlags: 0

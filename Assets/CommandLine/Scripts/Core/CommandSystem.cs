@@ -78,7 +78,7 @@ namespace RedSaw.CommandLineInterface{
 
                     /* parse parameter from string */
                     if(CommandParameterHandle.ParseParameter(args[i], parameters[i].ParameterType, out loadedParams[i]))continue;
-                    throw new Exception($"parameter <{parameters[i].Name}:{args[i]}> is invalid");
+                    throw new Exception($"parameter <{parameters[i].Name}>('{args[i]}') is invalid");
                 }
                 /* call the method */
                 method.Invoke(null, loadedParams);
@@ -633,7 +633,12 @@ namespace RedSaw.CommandLineInterface{
         public static CommandInfo[] QueryCommands(string query, int count, Func<string, string, int> scoreFunc){
 
             count = Math.Max(1, count);
-            var bestChoices = commands.Select(s => new {value = s, score = scoreFunc(query, s.Key)}).Where(s => s.score > 0).OrderByDescending(s => s.score).Take(count).ToArray();
+            var bestChoices = commands
+            .Select(s => new {value = s, score = scoreFunc(query, s.Key)})
+            .Where(s => s.score > 0)
+            .OrderByDescending(s => s.score)
+            .Take(count)
+            .ToArray();
             return bestChoices.Select(s => s.value.Value.CommandInfo).ToArray();
         }
     }

@@ -8,7 +8,7 @@ namespace RedSaw.CommandLineInterface{
     /// as a command method, and it woule be collected by command system automatically</para>
     /// </summary>
     public class CommandAttribute : Attribute{
-            
+
         public string Name { get; private set; }
         public string Desc { get; set; }
 

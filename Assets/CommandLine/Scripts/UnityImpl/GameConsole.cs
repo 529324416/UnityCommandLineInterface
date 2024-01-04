@@ -24,7 +24,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         private bool shouldRecordFailedCommand = true;
 
         [SerializeField, Tooltip("static parameter, use default command?")]
-        private bool useDefualtCommand = true;
+        private bool useDefaultCommand = true;
 
         static Console Instance { get; set; }
 
@@ -46,7 +46,8 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 alternativeCommandCount:alternativeCommandCount,
                 shouldRecordFailedCommand:shouldRecordFailedCommand,
                 outputPanelCapacity:outputCapacity,
-                outputWithTime:shouldOutputWithTime
+                outputWithTime:shouldOutputWithTime,
+                useDefaultCommand:useDefaultCommand
             );
             Instance.CurrentCommandSystem.ExecuteSlience("logo");
         }
