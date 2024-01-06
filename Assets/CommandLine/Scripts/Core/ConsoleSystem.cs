@@ -174,7 +174,18 @@ namespace RedSaw.CommandLineInterface{
         public IEnumerable<string> TotalCommandInfos => commandSystem.CommandInfos;
         public ICommandSystem CurrentCommandSystem => commandSystem;
 
+        /// <summary>initialize console</summary>
+        /// <param name="renderer">the renderer of console</param>
+        /// <param name="userInput">the input of console</param>
+        /// <param name="commandSystem">command system, if null, then use default system</param>
+        /// <param name="memoryCapacity">the capacity of input history</param>
+        /// <param name="alternativeCommandCount">the count of alternative command options</param>
+        /// <param name="shouldRecordFailedCommand">should record failed command input</param>
+        /// <param name="outputPanelCapacity">the capacity of output panel</param>
+        /// <param name="outputWithTime">should output with time information of [HH:mm:ss]</param>
+        /// <param name="useDefaultCommand">use default command?</param>
         public Console(
+
             IConsoleRenderer renderer, 
             IConsoleInput userInput,
             ICommandSystem commandSystem = null,
