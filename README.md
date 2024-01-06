@@ -4,19 +4,6 @@
 
 [Chinese Document](./README-ch.md)
 
-## TODO List
-
-- [x] **Add Command Tag Defination v0.11** *@2024/01/06*
-      <br> *you can add tag for your command so your can group them by tag, to hide or constraint some command usage*
-- [x] **Add Command Query Cache v0.11** *@2024/01/06*
-      <br> *command add query cache ability to store command query, use some space to bring more efficient query speed.*
-- [x] **Receive Unity's Debug Information v0.11** *@2024/01/06*
-      <br> *console supported to receive message from `UnityEngine.Debug.Log`, you can just use Unity's Debug Function, then the console would output the message as well*
-- [ ] **Refactoring Wrapper of `GameConsole` v0.12**
-- [ ] **Generate log file of console ouput v0.13**
-- [ ] **Support to Filter console output v0.13**
-- [ ] **Add More Console Renderer Features v0.2** 
-
 ## Summary
 
 The project is an inner game command line system, here are some screenshots of it.
@@ -143,3 +130,16 @@ wait for editing
 ### custom ui theme
 
 wait for editing
+
+## TODO List
+
+- [x] **Add Command Tag Defination v0.11** *@2024/01/06*
+      <br> *you can add tag for your command so your can group them by tag, to hide or constraint some command usage*
+- [x] **Add Command Query Cache v0.11** *@2024/01/06*
+      <br> *command add query cache ability to store command query, use some space to bring more efficient query speed.*
+- [x] **Receive Unity's Debug Information v0.11** *@2024/01/06*
+      <br> *console supported to receive message from `UnityEngine.Debug.Log`, you can just use Unity's Debug Function, then the console would output the message as well*
+- [ ] **Refactoring Wrapper of `GameConsole` v0.12**
+- [ ] **Generate log file of console ouput v0.13**
+- [ ] **Support to Filter console output v0.13**
+- [ ] **Add More Console Renderer Features v0.2** 
