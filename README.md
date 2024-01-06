@@ -1,5 +1,7 @@
 # UnityCommandLineInterface
 
+<a href="https://openupm.com/packages/com.redsaw.commandline/"><img src="https://img.shields.io/npm/v/com.redsaw.commandline?label=openupm&amp;registry_uri=https://package.openupm.com" /></a>
+
 [Chinese Document](./README-ch.md)
 
 ## TODO List
