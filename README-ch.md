@@ -10,10 +10,6 @@
 <img src="./Res/屏幕截图 2024-01-04 053723.png" style="zoom:80%" />
 </div>
 
-<div align=center>
-<img src="./Res/屏幕截图 2024-01-04 045116.png" style="zoom:80%" />
-</div>
-
 它由以下三个部分组成：
 
 - **命令系统**

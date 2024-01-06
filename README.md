@@ -6,23 +6,11 @@
 
 ## Summary
 
-The project is an inner game command line system, here are some screenshots of it.
+The project is an inner game command line console. it can run as a part of your game and provide an inner game debug and error log function. it just receives `UnityEngine.Debug.Log` method output so you have no need to change log point.
 
 <div align=center>
 <img src="./Res/屏幕截图 2024-01-04 053723.png" style="zoom:80%" />
 </div>
-
-<div align=center>
-<img src="./Res/屏幕截图 2024-01-04 045116.png" style="zoom:80%" />
-</div>
-
-It consists of three parts:
-
-- 1.CommandSystem
-- 2.Console and other components interfaces
-- 3.Console Renderer's Unity implementation
-
-These three parts are highly decoupled, it means the Console definitions and CommandSystem can be used in other projects individually, here are some instructions for usage.
 
 ## Usage
 
@@ -30,42 +18,44 @@ These three parts are highly decoupled, it means the Console definitions and Com
 
 The project use Attribute and Reflection to define and collect commands, you can define your commands like this:
 
-``````c#
-
+```c#
 [Command]
 static void MyCommand(){
     UnityEngine.Debug.Log("hello world");
 }
+```
 
-[Command("test_command")]
+then it could be recognized as a command, and you can input "*MyCommand*" to call it on command line console. there's no more configures or operations.
+
+<div align=center>
+<img src="./Res/usage-part-1.png" style="zoom:80%" />
+</div>
+
+you can set name, description, tag of command like this:
+
+```c#
+
+[Command("my_command")]
 static void DefinedCommandName(){
     UnityEngine.Debug.Log("hello world");
 }
 
-[Command("test_command2", Desc = "add some descriptions here")]
+[Command("with_desc", Desc = "add some descriptions here")]
 static void AddSomeDescriptions(){
     UnityEngine.Debug.Log("hello world");
 }
 
-[Command("command_with_args")]
-static void CommandWithArgs(int a, int b){
-    UnityEngine.Debug.Log(a + b);
-}
-
-[Command("command_with_tag", Tag = "disable_for_user")]
+[Command("with_tag", Tag = "disable_for_user")]
 static void CommandWithTag(){
     UnityEngine.Debug.Log("command is disabled for user");
 }
 
-``````
+[Command("with_args")]
+static void Add(int a, int b){
+    UnityEngine.Debug.Log(a + b);
+}
 
-then you can use the command by inputting it into the console like this, there's no more configs or operations.
-
-<div align=center>
-<img src="./Res/屏幕截图 2024-01-04 064500.png" style="zoom:80%" />
-</div>
-
-### The parameters of Command methods
+```
 
 Not all static methods could be recognized as command, the method's parameter list can only use the types defined below. 
 ```
@@ -120,6 +110,38 @@ Then you can use this command now.
 <div align=center>
 <img src="./Res/屏幕截图 2024-01-04 064808.png" style="zoom:80%" />
 </div>
+
+this could make it easier to do some debug or testing work, for example, your debug method need a parameter like Player or Enemy, then you can convert it from string input by your custom parser function, looks like below:
+
+```c#
+
+public class GameEntity{/* some code here..*/}
+
+[Command("handle_game_entity")]
+static void DebugCommand(GameEntity entity){
+    // do something to entity..
+}
+
+[CommandParameterParser(typeof(GameEntity))]
+static bool GameEntityParser(string input, out object data){
+    /* fake code, just for example */
+
+    switch(input){
+        case "A":
+        case "B":
+        case "C"
+            data = gameEntities.GetByName(input);
+            return true;
+        default:
+            data = null;
+            return false;
+    }
+}
+
+```
+
+then you can input `handle_game_entity 'A'` to do something to the entity A.
+
 
 ## Custom the console 
 
