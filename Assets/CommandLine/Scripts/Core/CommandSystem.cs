@@ -14,37 +14,6 @@ using System.Reflection;
 
 namespace RedSaw.CommandLineInterface{
 
-    // /// <summary>show command information</summary>
-    // public readonly struct CommandInfo{
-
-    //     /// <summary>Command Name</summary>
-    //     public readonly string name;
-
-    //     /// <summary>Command Description</summary>
-    //     public readonly string description;
-
-    //     /// <summary>Command Tag</summary>
-    //     public readonly string tag;
-
-    //     /// <summary>the parameter count of command</summary>
-    //     public readonly int parameterCount;
-
-    //     /// <summary>the parameter information of command</summary>
-    //     public readonly string parameterInfo;
-
-    //     public string Summary => $"{name}: {description}";
-    //     public string Detail => $"{name}{parameterInfo}: {description}";
-        
-    //     public CommandInfo(string name, string description, int parameterCount, string parameterInfo, string tag){
-
-    //         this.name = name;
-    //         this.description = description;
-    //         this.parameterCount = parameterCount;
-    //         this.parameterInfo = parameterInfo;
-    //         this.tag = tag;
-    //     }
-    // }
-
     /// <summary>
     /// command structure
     /// </summary>

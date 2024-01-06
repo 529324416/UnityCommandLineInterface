@@ -11,6 +11,8 @@
 - [x] **支持接受Unity的Debug.Log输出 v0.11** *@2024/01/06*
       <br> *控制台提供了一个开关项用于选择是否监听UnityEngine.Debug.Log，打开时，该函数的输出结果会同时输出到控制台中，从而使你不用改变当前游戏的Debug命令*
 - [ ] **重构控制台的封装结构 v0.12**
+- [ ] **生成日志文件 v0.13**
+- [ ] **输出过滤 v0.13**
 - [ ] **添加更多的控制台渲染器行为逻辑** v0.2
 
 
@@ -65,6 +67,11 @@ static void CommandWithArgs(int a, int b){
 [Command("command_with_tag", Tag = "disable_for_user")]
 static void CommandWithTag(){
     UnityEngine.Debug.Log("command is disabled for user");
+}
+
+[Command("+8123*(&)  ..dsfm")]
+static void WiredCommand(){
+    
 }
 
 ``````

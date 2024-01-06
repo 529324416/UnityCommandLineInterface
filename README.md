@@ -11,7 +11,9 @@
 - [x] **Receive Unity's Debug Information v0.11** *@2024/01/06*
       <br> *console supported to receive message from `UnityEngine.Debug.Log`, you can just use Unity's Debug Function, then the console would output the message as well*
 - [ ] **Refactoring Wrapper of `GameConsole` v0.12**
-- [ ] **Add More Console Renderer Features** v0.2
+- [ ] **Generate log file of console ouput v0.13**
+- [ ] **Support to Filter console output v0.13**
+- [ ] **Add More Console Renderer Features v0.2** 
 
 ## Summary
 
