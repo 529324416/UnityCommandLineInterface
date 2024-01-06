@@ -2,6 +2,20 @@
 
 [英文文档](./README.md)
 
+## TODO List
+
+- [x] **添加命令标签 v0.11** *@2024/01/06*
+      <br> *现在你可以给命令添加标签，用于标签给命令分组用于实现一些特殊的限制，或者测试约束*
+- [x] **添加命令查询缓存 v0.11** *@2024/01/06*
+      <br> *现在查询命令会有最近20条查询记录的缓存，用一点空间换取了更高效的查询速度*
+- [x] **支持接受Unity的Debug.Log输出 v0.11** *@2024/01/06*
+      <br> *控制台提供了一个开关项用于选择是否监听UnityEngine.Debug.Log，打开时，该函数的输出结果会同时输出到控制台中，从而使你不用改变当前游戏的Debug命令*
+- [ ] **重构控制台的封装结构 v0.12**
+- [ ] **添加更多的控制台渲染器行为逻辑** v0.2
+
+
+## 简介
+
 这个项目是一个游戏内置的控制台项目，下面是项目的一些截图
 
 <div align=center>
@@ -20,7 +34,7 @@
 
 这三个部分是高度解耦合的，也就是控制台的行为逻辑与命令系统可以自由的拆解到其他的项目中。以下是关于三个部分的使用文档。
 
-## 命令系统
+## 如何使用
 
 ### 如何扩展自定义命令
 
@@ -41,6 +55,16 @@ static void DefinedCommandName(){
 [Command("test_command2", Desc = "add some descriptions here")]
 static void AddSomeDescriptions(){
     UnityEngine.Debug.Log("hello world");
+}
+
+[Command("command_with_args")]
+static void CommandWithArgs(int a, int b){
+    UnityEngine.Debug.Log(a + b);
+}
+
+[Command("command_with_tag", Tag = "disable_for_user")]
+static void CommandWithTag(){
+    UnityEngine.Debug.Log("command is disabled for user");
 }
 
 ``````

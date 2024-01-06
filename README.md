@@ -9,7 +9,8 @@
 - [x] **Add Command Query Cache v0.11** *@2024/01/06*
       <br> *command add query cache ability to store command query, use some space to bring more efficient query speed.*
 - [x] **Receive Unity's Debug Information v0.11** *@2024/01/06*
-      <br> *console supported to receive message from UnityEngine Debug.Log, you can just use Unity's Debug Function, then the console would output also*
+      <br> *console supported to receive message from `UnityEngine.Debug.Log`, you can just use Unity's Debug Function, then the console would output the message as well*
+- [ ] **Refactoring Wrapper of `GameConsole` v0.12**
 - [ ] **Add More Console Renderer Features** v0.2
 
 ## Summary
