@@ -1,0 +1,21 @@
+{
+    "name":"com.redsaw.commandline",
+    "displayName": "Unity-CLI",
+    "version": "0.1.1",
+    "unity": "2021.3",
+    "description": "an inner game command line tool",
+    "keywords": ["commandline", "cli", "debugging", "log"],
+    "category": "Debugging",
+    "dependencies": {},
+    "samples": [
+        {
+            "displayName": "Command Line",
+            "description": "A simple command line tool",
+            "path": "Assets/Scenes/SampleScene"
+        }
+    ],
+    "author": {
+        "name": "Prince Biscuit",
+        "url": "https://github.com/529324416"
+    }
+}
