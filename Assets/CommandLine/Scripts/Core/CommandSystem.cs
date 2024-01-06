@@ -14,47 +14,71 @@ using System.Reflection;
 
 namespace RedSaw.CommandLineInterface{
 
-    /// <summary>show command information</summary>
-    public readonly struct CommandInfo{
+    // /// <summary>show command information</summary>
+    // public readonly struct CommandInfo{
 
-        /// <summary>Command Name</summary>
-        public readonly string Name;
+    //     /// <summary>Command Name</summary>
+    //     public readonly string name;
 
-        /// <summary>Command Description</summary>
-        public readonly string Description;
+    //     /// <summary>Command Description</summary>
+    //     public readonly string description;
 
-        /// <summary>the parameter count of command</summary>
-        public readonly int ParameterCount;
+    //     /// <summary>Command Tag</summary>
+    //     public readonly string tag;
+
+    //     /// <summary>the parameter count of command</summary>
+    //     public readonly int parameterCount;
+
+    //     /// <summary>the parameter information of command</summary>
+    //     public readonly string parameterInfo;
+
+    //     public string Summary => $"{name}: {description}";
+    //     public string Detail => $"{name}{parameterInfo}: {description}";
         
-        public CommandInfo(string Name, string Description, int ParameterCount){
+    //     public CommandInfo(string name, string description, int parameterCount, string parameterInfo, string tag){
 
-            this.Name = Name;
-            this.Description = Description;
-            this.ParameterCount = ParameterCount;
-        }
-        public override string ToString()
-        {
-            return $"{Name}: {Description}";
-        }
-    }
+    //         this.name = name;
+    //         this.description = description;
+    //         this.parameterCount = parameterCount;
+    //         this.parameterInfo = parameterInfo;
+    //         this.tag = tag;
+    //     }
+    // }
 
-    /// <summary>command structure</summary>
-    readonly struct Command{
+    /// <summary>
+    /// command structure
+    /// </summary>
+    public readonly struct Command{
 
         public readonly string name;
         public readonly string description;
+        public readonly string tag;
         public readonly MethodInfo method;
         public readonly ParameterInfo[] parameters;
 
         public readonly int ParameterCount => parameters.Length;
-        public readonly CommandInfo CommandInfo => new(name, description, ParameterCount);
+        // public readonly CommandInfo CommandInfo => new(name, description, ParameterCount, ParameterInfo, tag);
+
+        /// <summary>command parameter information</summary>
+        public string ParameterInfo{
+
+            get{
+                if(parameters.Length == 0)return "()";
+                string result = string.Empty;
+                foreach(var parameter in parameters){
+                    result += $"{parameter.ParameterType.Name} {parameter.Name}, ";
+                }
+                return $"({result[..^2]})";
+            }
+        }
 
         /// <summary>command constructor</summary>
-        public Command(string name, string description, MethodInfo method){
+        public Command(string name, string description, MethodInfo method, string tag = null){
 
             this.name = name;
             this.description = description;
             this.method = method;
+            this.tag = tag ?? string.Empty;
             parameters = method.GetParameters();
         }
 
@@ -92,7 +116,12 @@ namespace RedSaw.CommandLineInterface{
                 return ex.InnerException ?? ex;
             }
         }
-
+        /// <summary>check if this command has given tag</summary>
+        public bool CompareTag(string tag){
+            
+            if(tag == null || tag.Length == 0)return true;
+            return this.tag == tag;
+        }
         public override string ToString()
         {
             return $"{name} : {description}";
@@ -473,6 +502,38 @@ namespace RedSaw.CommandLineInterface{
         }
     }
 
+    /// <summary>query buffer</summary>
+    class QueryBuffer{
+
+        readonly Dictionary<string, Command[]> buffer = new();
+        readonly List<string> queryHistory = new();
+        readonly int capacity;
+        public QueryBuffer(int capacity){
+            this.capacity = Math.Max(1, capacity);
+        }
+
+        /// <summary>cache a query result</summary>
+        /// <param name="query">query string, this must not be a empty or null value</param>
+        /// <param name="result">query result, must not be a null value</param>
+        public void Cache(string query, Command[] result){
+
+            if(buffer.ContainsKey(query))return;
+            if( queryHistory.Count + 1 > capacity ){
+                buffer.Remove(queryHistory[0]);
+                queryHistory.RemoveAt(0);
+            }
+            buffer.Add(query, result);
+            queryHistory.Add(query);
+        }
+        /// <summary>
+        /// check if some query has been recorded
+        /// </summary>
+        /// <param name="query">query string, and you should check if it is 
+        /// null or empty before you call this function</param>
+        public bool GetCache(string query, out Command[] info) => buffer.TryGetValue(query, out info);
+
+    }
+
     /// <summary>command system</summary>
     public static class CommandSystem{
 
@@ -530,6 +591,8 @@ namespace RedSaw.CommandLineInterface{
         }
 
         static readonly Dictionary<string, Command> commands = new();
+        static readonly QueryBuffer queryBuffer = new(20);
+
         static readonly CommandParser parser = new();
         static Action<string> output;
         static Action<string> outputErr;
@@ -537,13 +600,7 @@ namespace RedSaw.CommandLineInterface{
         static void OutputErr(string message) => outputErr?.Invoke(message);
 
         /// <summary>get all commands' informations</summary>
-        public static IEnumerable<CommandInfo> TotalCommands{
-            get{
-                foreach(var command in commands.Values){
-                    yield return command.CommandInfo;
-                }
-            }
-        }
+        public static IEnumerable<Command> TotalCommands => commands.Values;
 
         static CommandSystem(){
 
@@ -630,16 +687,27 @@ namespace RedSaw.CommandLineInterface{
         /// <param name="count">the count of commands you want to query</param>
         /// <param name="scoreFunc">score function</param>
         /// <returns>return a group of commands</returns>
-        public static CommandInfo[] QueryCommands(string query, int count, Func<string, string, int> scoreFunc){
+        public static Command[] QueryCommands(string query, int count, Func<string, string, int> scoreFunc, string tag = null){
 
+            /* ensure that query must be a valid string */
+            if(query == null || query.Length == 0)return new Command[0];
+
+            /* check if this query has been stored */ 
+            var queryDetailInfo = query + ":" + tag ?? string.Empty;
+            if(queryBuffer.GetCache(queryDetailInfo, out var result))return result;
+
+            /* start to query */
             count = Math.Max(1, count);
             var bestChoices = commands
+            .Where(s => s.Value.CompareTag(tag))
             .Select(s => new {value = s, score = scoreFunc(query, s.Key)})
             .Where(s => s.score > 0)
             .OrderByDescending(s => s.score)
             .Take(count)
             .ToArray();
-            return bestChoices.Select(s => s.value.Value.CommandInfo).ToArray();
+            result = bestChoices.Select(s => s.value.Value).ToArray();
+            queryBuffer.Cache(queryDetailInfo, result);
+            return result;
         }
     }
 }

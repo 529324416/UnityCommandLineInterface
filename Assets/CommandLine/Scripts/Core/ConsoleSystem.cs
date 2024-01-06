@@ -27,6 +27,7 @@ namespace RedSaw.CommandLineInterface{
             history.Add(input);
             lastIndex = history.Count - 1;
         }
+
         /// <summary>get last input string</summary>
         public string Last{
             get{
@@ -35,6 +36,7 @@ namespace RedSaw.CommandLineInterface{
                 return history[lastIndex --];
             }
         }
+
         /// <summary>get next input string</summary>
         public string Next{
             get{
@@ -122,7 +124,7 @@ namespace RedSaw.CommandLineInterface{
             public IEnumerable<string> CommandInfos{
                 get{
                     foreach(var cmd in CommandSystem.TotalCommands){
-                        yield return $"{cmd.Name}: {cmd.Description}";
+                        yield return $"{cmd.name}: {cmd.description}";
                     }
                 }
             }
@@ -136,7 +138,7 @@ namespace RedSaw.CommandLineInterface{
                 var commands = CommandSystem.QueryCommands(input, count, CLIUtils.SimpleFilter);
                 var result = new List<(string, string)>();
                 foreach(var command in commands){
-                    result.Add((command.Name, command.Description));
+                    result.Add((command.name, command.description));
                 }
                 return result;
             }

@@ -4,9 +4,13 @@
 
 ## TODO List
 
-- [ ] Add Command Tag Defination v0.11
-- [ ] Add More Console Renderer Features v0.2
-- [ ] Listen Unity Debug.Log's message output v0.21
+- [x] **Add Command Tag Defination v0.11** *@2024/01/06*
+      <br> *you can add tag for your command so your can group them by tag, to hide or constraint some command usage*
+- [x] **Add Command Query Cache v0.11** *@2024/01/06*
+      <br> *command add query cache ability to store command query, use some space to bring more efficient query speed.*
+- [x] **Receive Unity's Debug Information v0.11** *@2024/01/06*
+      <br> *console supported to receive message from UnityEngine Debug.Log, you can just use Unity's Debug Function, then the console would output also*
+- [ ] **Add More Console Renderer Features** v0.2
 
 ## Summary
 
@@ -28,9 +32,9 @@ It consists of three parts:
 
 These three parts are highly decoupled, it means the Console definitions and CommandSystem can be used in other projects individually, here are some instructions for usage.
 
-## CommandSystem
+## Usage
 
-### how to define custom commands
+### how to add custom commands
 
 The project use Attribute and Reflection to define and collect commands, you can define your commands like this:
 
@@ -49,6 +53,16 @@ static void DefinedCommandName(){
 [Command("test_command2", Desc = "add some descriptions here")]
 static void AddSomeDescriptions(){
     UnityEngine.Debug.Log("hello world");
+}
+
+[Command("command_with_args")]
+static void CommandWithArgs(int a, int b){
+    UnityEngine.Debug.Log(a + b);
+}
+
+[Command("command_with_tag", Tag = "disable_for_user")]
+static void CommandWithTag(){
+    UnityEngine.Debug.Log("command is disabled for user");
 }
 
 ``````

@@ -26,6 +26,9 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         [SerializeField, Tooltip("static parameter, use default command?")]
         private bool useDefaultCommand = true;
 
+        [SerializeField, Tooltip("receive unity log message?")]
+        private bool receiveUnityLogMessage = true;
+
         static Console Instance { get; set; }
 
         void Awake(){
@@ -50,6 +53,28 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 useDefaultCommand:useDefaultCommand
             );
             Instance.CurrentCommandSystem.ExecuteSlience("logo");
+            if(receiveUnityLogMessage){
+                Application.logMessageReceived += (msg, stack, type) => {
+                    string color = "white";
+                    switch (type)
+                    {
+                        case LogType.Error:
+                        case LogType.Exception:
+                        case LogType.Assert:
+                            color = "red";
+                            break;
+                        case LogType.Warning:
+                            color = "yellow";
+                            break;
+                        case LogType.Log:
+                            break;
+                        default:
+                            color = "white";
+                            break;
+                    }
+                    Instance.Output(msg, color);
+                };
+            }
         }
         void Update() => Instance.Update();
 
