@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Diagnostics;
 
 namespace RedSaw.CommandLineInterface{
 
@@ -117,7 +117,7 @@ namespace RedSaw.CommandLineInterface{
     }
 
     /// <summary>command console</summary>
-    public class Console{
+    public class ConsoleController{
 
         class CmdImpl : ICommandSystem
         {
@@ -159,17 +159,7 @@ namespace RedSaw.CommandLineInterface{
 
         readonly InputHistory inputHistory;
         readonly LinearSelector selector;
-        bool throwTextChanged = false;
-
-        public string TimeInfo{
-            get{
-                if(outputWithTime){
-                    var time = DateTime.Now;
-                    return $"[{time.Hour}:{time.Minute}:{time.Second}] ";
-                }
-                return string.Empty;
-            }
-        }
+        bool ignoreTextChanged = false;
 
         public IEnumerable<string> TotalCommandInfos => commandSystem.CommandInfos;
         public ICommandSystem CurrentCommandSystem => commandSystem;
@@ -184,7 +174,7 @@ namespace RedSaw.CommandLineInterface{
         /// <param name="outputPanelCapacity">the capacity of output panel</param>
         /// <param name="outputWithTime">should output with time information of [HH:mm:ss]</param>
         /// <param name="useDefaultCommand">use default command?</param>
-        public Console(
+        public ConsoleController(
 
             IConsoleRenderer renderer, 
             IConsoleInput userInput,
@@ -204,8 +194,8 @@ namespace RedSaw.CommandLineInterface{
 
             // about command system
             this.commandSystem = commandSystem ?? new CmdImpl();
-            this.commandSystem.SetOutputFunc(s => Output(s));
-            this.commandSystem.SetOutputErrFunc(s => Output(s, "#ff0000"));
+            this.commandSystem.SetOutputFunc(s => Output(s, "#fffde3"));
+            this.commandSystem.SetOutputErrFunc(s => Output(s, "#c92a36"));
             if(useDefaultCommand)this.commandSystem.UseDefualtCommand();
 
             // other things
@@ -242,7 +232,7 @@ namespace RedSaw.CommandLineInterface{
                     if(renderer.IsAlternativeOptionsActive){
                         selector.MoveNext();
                     }else{
-                        throwTextChanged = true;
+                        ignoreTextChanged = true;
                         renderer.InputText = inputHistory.Next;
                         renderer.MoveCursorToEnd();
                     }
@@ -251,7 +241,7 @@ namespace RedSaw.CommandLineInterface{
                     if(renderer.IsAlternativeOptionsActive){
                         selector.MoveLast();
                     }else{
-                        throwTextChanged = true;
+                        ignoreTextChanged = true;
                         renderer.InputText = inputHistory.Last;
                         renderer.MoveCursorToEnd();
                     }
@@ -266,16 +256,30 @@ namespace RedSaw.CommandLineInterface{
         }
         
         /// <summary>Output message on console</summary>
-        public void Output(string msg) => renderer.Output(TimeInfo + msg);
+        public void Output(string msg){
+
+            if(outputWithTime){
+                renderer.Output(CLIUtils.TimeInfo + msg);
+                return;
+            }
+            renderer.Output(msg);
+        }
 
         /// <summary>Output message on console with given color</summary>
-        public void Output(string msg, string color = "#ff0000") => renderer.Output(TimeInfo + msg, color);
+        public void Output(string msg, string color = "#ff0000"){
+
+            if(outputWithTime){
+                renderer.Output(CLIUtils.TimeInfo + msg, color);
+                return;
+            }
+            renderer.Output(msg, color);
+        }
 
         /// <summary>Output message on console</summary>
         public void Output(string[] msg, string color = "#ffffff"){
 
             if(outputWithTime){
-                var timeInfo = TimeInfo;
+                var timeInfo = CLIUtils.TimeInfo;
                 for(int i = 0; i < msg.Length; i ++){
                     msg[i] = timeInfo + msg[i];
                 }
@@ -289,7 +293,7 @@ namespace RedSaw.CommandLineInterface{
         public void Output(string[] msg){
 
             if(outputWithTime){
-                var timeInfo = TimeInfo;
+                var timeInfo = CLIUtils.TimeInfo;
                 for(int i = 0; i < msg.Length; i ++){
                     msg[i] = timeInfo + msg[i];
                 }
@@ -305,8 +309,8 @@ namespace RedSaw.CommandLineInterface{
         public void OnTextChanged(string text){
             /* when input new string, should query commands from commandSystem */
 
-            if(throwTextChanged){
-                throwTextChanged = false;
+            if(ignoreTextChanged){
+                ignoreTextChanged = false;
                 return;
             }
 
@@ -353,7 +357,8 @@ namespace RedSaw.CommandLineInterface{
                 return;
             }
 
-            if(renderer.IsAlternativeOptionsActive)renderer.IsAlternativeOptionsActive = false;
+            if(renderer.IsAlternativeOptionsActive)
+                renderer.IsAlternativeOptionsActive = false;
 
             Output(text);
             if(text.Length > 0){

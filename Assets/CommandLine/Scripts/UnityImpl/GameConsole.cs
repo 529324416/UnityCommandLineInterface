@@ -26,14 +26,14 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         [SerializeField, Tooltip("static parameter, use default command?")]
         private bool useDefaultCommand = true;
 
-        [SerializeField, Tooltip("receive unity log message?")]
-        private bool receiveUnityLogMessage = true;
+        // [SerializeField, Tooltip("receive unity log message?")]
+        // private bool receiveUnityLogMessage = true;
 
-        static Console Instance { get; set; }
+        static ConsoleController Instance { get; set; }
 
         void Awake(){
             if(consoleRenderer == null){
-                Debug.LogError("ConsoleRenderer has not found!");
+                Debug.LogError("ConsoleRenderer is missing!!");
                 gameObject.SetActive(false);
                 return;
             }
@@ -41,7 +41,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             gameObject.SetActive(true);
 
             /* intialize console, you can set parameter what you like */
-            Instance = new Console(
+            Instance = new ConsoleController(
                 consoleRenderer, 
                 new UserInput(),
                 commandSystem:null,         // use default command system
@@ -52,43 +52,24 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 outputWithTime:shouldOutputWithTime,
                 useDefaultCommand:useDefaultCommand
             );
-            Instance.CurrentCommandSystem.ExecuteSlience("logo");
-            if(receiveUnityLogMessage){
-                Application.logMessageReceived += (msg, stack, type) => {
-                    string color = "white";
-                    switch (type)
-                    {
-                        case LogType.Error:
-                        case LogType.Exception:
-                        case LogType.Assert:
-                            color = "red";
-                            break;
-                        case LogType.Warning:
-                            color = "yellow";
-                            break;
-                        case LogType.Log:
-                            break;
-                        default:
-                            color = "white";
-                            break;
-                    }
-                    Instance.Output(msg, color);
-                };
-            }
+            Application.logMessageReceived += (msg, stack, type) => {
+                string color = "#b13c45";
+                switch (type)
+                {
+                    case LogType.Error:
+                    case LogType.Exception:
+                    case LogType.Assert:
+                        color = "#b13c45";
+                        break;
+                    case LogType.Warning:
+                        color = "yellow";
+                        break;
+                    case LogType.Log:
+                        break;
+                }
+                Instance.Output(msg, color);
+            };
         }
         void Update() => Instance.Update();
-
-        public static void Output(string msg) => Instance.Output(msg);
-        public static void Output(string msg, string color) => Instance.Output(msg, color);
-        public static void Output(object data){
-            string _ = data == null ? "null" : data.ToString();
-            Instance.Output(_);
-        }
-        public static void Output(object data, string color){
-            string _ = data == null ? "null" : data.ToString();
-            Instance.Output(_, color);
-        }
-        public static void Output(string[] msg) => Instance.Output(msg);
-        public static void Output(string[] msg, string color) => Instance.Output(msg, color);
     }
 }

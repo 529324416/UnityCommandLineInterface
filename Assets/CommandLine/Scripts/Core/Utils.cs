@@ -33,5 +33,16 @@ namespace RedSaw.CommandLineInterface{
             }
             return 0;
         }
+
+        /// <summary>get time information of [HH:mm:ss]</summary>
+        public static string TimeInfo{
+            get{
+                var time = DateTime.Now;
+                return $"[{PadZero(time.Hour)}:{PadZero(time.Minute)}:{PadZero(time.Second)}] ";
+            }
+        }
+        static string PadZero(int value){
+            return value < 10 ? $"0{value}" : $"{value}";
+        }
     }
 }
