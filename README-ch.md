@@ -160,6 +160,12 @@ static bool GameEntityParser(string input, out object data){
 
 等待文档的完善
 
+## 其他
+
+### 适用的Unity版本
+
+这个项目与Unity是高度解耦合的，所以它几乎可以用于所有版本的Unity，你可以为它定义自己的UI来使用，这个项目提供了默认的Unity实现，你可以学习或者自己改造。
+
 
 ## TODO List
 

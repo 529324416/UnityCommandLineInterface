@@ -146,7 +146,6 @@ static bool GameEntityParser(string input, out object data){
 
 then you can input `handle_game_entity 'A'` to do something to the entity A.
 
-
 ## Custom the console 
 
 ### define custom Input
@@ -156,6 +155,14 @@ wait for editing
 ### custom ui theme
 
 wait for editing
+
+## Other
+
+### Applicable Unity Versions
+
+this project is highly decoupled with UnityEngine, so it can use in any version of UnityEngine.
+you can define custom UI system for console, and this project provide default implementation for you can 
+learn or optimized by yourself.
 
 ## TODO List
 
