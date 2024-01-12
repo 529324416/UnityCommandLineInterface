@@ -119,7 +119,8 @@ namespace RedSaw.CommandLineInterface{
     /// <summary>command console</summary>
     public class ConsoleController{
 
-        class CmdImpl : ICommandSystem
+        /// <summary>default command system implementation</summary>
+        class DefaultCmdImpl : ICommandSystem
         {
             public IEnumerable<string> CommandInfos{
                 get{
@@ -159,7 +160,7 @@ namespace RedSaw.CommandLineInterface{
 
         readonly InputHistory inputHistory;
         readonly LinearSelector selector;
-        bool ignoreTextChanged = false;
+        bool ignoreTextChanged;
 
         public IEnumerable<string> TotalCommandInfos => commandSystem.CommandInfos;
         public ICommandSystem CurrentCommandSystem => commandSystem;
@@ -193,15 +194,18 @@ namespace RedSaw.CommandLineInterface{
             renderer.BindOnTextChanged(OnTextChanged);
 
             // about command system
-            this.commandSystem = commandSystem ?? new CmdImpl();
+            this.commandSystem = commandSystem ?? new DefaultCmdImpl();
             this.commandSystem.SetOutputFunc(s => Output(s, "#fffde3"));
             this.commandSystem.SetOutputErrFunc(s => Output(s, "#c92a36"));
             if(useDefaultCommand)this.commandSystem.UseDefualtCommand();
 
-            // other things
+            // other things - user input
             this.userInput = userInput;
+
+            // other things - input history
             inputHistory = new InputHistory(Math.Max(memoryCapacity, 2));
-            
+
+            // other things - alternative options
             selector = new LinearSelector();
             this.selector.OnSelectionChanged += idx => {
                 renderer.AlternativeOptionsIndex = idx;
@@ -266,7 +270,7 @@ namespace RedSaw.CommandLineInterface{
         }
 
         /// <summary>Output message on console with given color</summary>
-        public void Output(string msg, string color = "#ff0000"){
+        public void Output(string msg, string color = "#ffffff"){
 
             if(outputWithTime){
                 renderer.Output(CLIUtils.TimeInfo + msg, color);
@@ -367,10 +371,10 @@ namespace RedSaw.CommandLineInterface{
                 }else{
                     if(shouldRecordFailedCommand)inputHistory.Record(text);
                 }
-                renderer.ActivateInput();
                 renderer.InputText = string.Empty;
-                renderer.MoveScrollBarToEnd();
             }
+            renderer.MoveScrollBarToEnd();
+            renderer.ActivateInput();
         }
     }
 }

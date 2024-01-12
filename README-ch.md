@@ -20,52 +20,50 @@
 
 ## 如何使用
 
-### 如何扩展自定义命令
+### 如何添加自定义命令
 
-项目通过特性和反射来定义命令，你可以通过定义静态函数来表示一个命令，如下所示：
+该项目使用特性和反射来定义和收集命令，你可以通过给函数挂载`Command`特性来定义你自己命令
 
-``````c#
-
+```c#
 [Command]
 static void MyCommand(){
     UnityEngine.Debug.Log("hello world");
 }
+```
 
-[Command("test_command")]
+这样这个函数就会被识别为一个命令，并且你可以输入 *`MyCommand`* 来执行该函数，之间不需要任何多余的配置或者操作
+
+<div align=center>
+<img src="./Res/usage-part-1.png" style="zoom:80%" />
+</div>
+
+你可以设置命令的名称，描述和标签
+
+```c#
+
+[Command("my_command")]
 static void DefinedCommandName(){
     UnityEngine.Debug.Log("hello world");
 }
 
-[Command("test_command2", Desc = "add some descriptions here")]
+[Command("with_desc", Desc = "add some descriptions here")]
 static void AddSomeDescriptions(){
     UnityEngine.Debug.Log("hello world");
 }
 
-[Command("command_with_args")]
-static void CommandWithArgs(int a, int b){
-    UnityEngine.Debug.Log(a + b);
-}
-
-[Command("command_with_tag", Tag = "disable_for_user")]
+[Command("with_tag", Tag = "disable_for_user")]
 static void CommandWithTag(){
     UnityEngine.Debug.Log("command is disabled for user");
 }
 
-[Command("+8123*(&)  ..dsfm")]
-static void WiredCommand(){
-    
+[Command("with_args")]
+static void Add(int a, int b){
+    UnityEngine.Debug.Log(a + b);
 }
 
-``````
-之后你就可以通过命令行找到这个命令,之间不再需要额外的操作或者配置,如下图所示:
+```
 
-<div align=center>
-<img src="./Res/屏幕截图 2024-01-04 064500.png" style="zoom:80%" />
-</div>
-
-### 命令函数的参数
-
-不是所有的静态函数都可以被识别为命令，这需要目标函数的参数列表满足类型要求，它支持所有采用基础类型数据作为参数的静态函数，默认类型如下：
+并不是所有的静态函数都可以被识别为一个命令，要求命令的参数列表使用以下类型的参数
 
 ```
 Int
@@ -84,22 +82,23 @@ Decimal
 SByte
 ```
 
-事实上这些类型已经足够使用了，但是如果你希望一些使用了额外参数的命令也可以被识别为命令的话，可以注册一个类型转换函数给命令系统，比如，你有一个使用了枚举类型参数的命令函数。
+不过大部分情况下这些参数已经足够使用了，但是如果你希望一些特殊的函数能够使用其他的参数类型的话，可以通过注册一个类型解析函数给命令系统，比如你有一个采用`Enum`类型作为参数的函数：
 
 ``````c#
-[Command("test_command2")]
+[Command]
 static void TestCommand(MyEnum value){
 	// do something..
 }
 ``````
+默认情况下它是不会被识别为函数的，此时你可以注册一个格式如下所示的类型解析函数
 
-由于`MyEnum`类型不属于默认支持的类型，所以默认情况下它不会被识别为命令，但是你可以通过注册一个解析函数使其可以被识别。解析函数的签名如下：
 
 ``````c#
 bool ParseFunc(string args, out object value);
 ``````
 
-注册方法是给你的解析函数挂载特性：`CommandParameterParser`
+注册方法是给一个静态函数挂载`CommandParameterParser`特性，这个特性函数应该解析给定的字符串并通过`out`关键字返回一个`object`数据，返回一个布尔值表示这个字符串是否有效。
+
 
 ``````c#
 [CommandParameterParser(typeof(MyEnum))]
@@ -114,11 +113,42 @@ static bool MyEnumParser(string value, out object data){
 }
 ``````
 
-之后你就可以使用这个命令了，如下图所示：
+之后它就可以正常识别并使用了
 
 <div align=center>
 <img src="./Res/屏幕截图 2024-01-04 064808.png" style="zoom:80%" />
 </div>
+
+这个特性支持你构建更多特殊的命令，比如你的命令函数需要一个`Player`或者`Enemy`这样的非基础类型参数，你可以注册一个类似的函数，并将一个字符串解析为`Player`，解析方法由你自己定义，比如下面这样
+
+```c#
+
+public class GameEntity{/* some code here..*/}
+
+[Command("handle_game_entity")]
+static void DebugCommand(GameEntity entity){
+    // do something to entity..
+}
+
+[CommandParameterParser(typeof(GameEntity))]
+static bool GameEntityParser(string input, out object data){
+    /* fake code, just for example */
+
+    switch(input){
+        case "A":
+        case "B":
+        case "C"
+            data = gameEntities.GetByName(input);
+            return true;
+        default:
+            data = null;
+            return false;
+    }
+}
+
+```
+
+之后你就可以通过输入 `handle_game_entity 'A'` 来对游戏对象A做一些操作了。
 
 ## 自定义命令行系统
 
@@ -139,7 +169,7 @@ static bool MyEnumParser(string value, out object data){
       <br> *现在查询命令会有最近20条查询记录的缓存，用一点空间换取了更高效的查询速度*
 - [x] **支持接受Unity的Debug.Log输出 v0.11** *@2024/01/06*
       <br> *控制台提供了一个开关项用于选择是否监听UnityEngine.Debug.Log，打开时，该函数的输出结果会同时输出到控制台中，从而使你不用改变当前游戏的Debug命令*
-- [ ] **重构控制台的封装结构 v0.12**
-- [ ] **生成日志文件 v0.13**
+- [ ] ~~**重构控制台的封装结构 v0.12**~~
+- [ ] ~~**生成日志文件 v0.13**~~
 - [ ] **输出过滤 v0.13**
 - [ ] **添加更多的控制台渲染器行为逻辑** v0.2

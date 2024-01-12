@@ -26,10 +26,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         [SerializeField, Tooltip("static parameter, use default command?")]
         private bool useDefaultCommand = true;
 
-        // [SerializeField, Tooltip("receive unity log message?")]
-        // private bool receiveUnityLogMessage = true;
-
-        static ConsoleController Instance { get; set; }
+        ConsoleController Instance;
 
         void Awake(){
             if(consoleRenderer == null){
@@ -37,7 +34,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 gameObject.SetActive(false);
                 return;
             }
-
             gameObject.SetActive(true);
 
             /* intialize console, you can set parameter what you like */
@@ -52,24 +48,31 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 outputWithTime:shouldOutputWithTime,
                 useDefaultCommand:useDefaultCommand
             );
-            Application.logMessageReceived += (msg, stack, type) => {
-                string color = "#b13c45";
-                switch (type)
-                {
-                    case LogType.Error:
-                    case LogType.Exception:
-                    case LogType.Assert:
-                        color = "#b13c45";
-                        break;
-                    case LogType.Warning:
-                        color = "yellow";
-                        break;
-                    case LogType.Log:
-                        break;
-                }
-                Instance.Output(msg, color);
-            };
+            Application.logMessageReceived += UnityConsoleLog;
         }
         void Update() => Instance.Update();
+        void OnDestory() => Application.logMessageReceived -= UnityConsoleLog;
+
+        void UnityConsoleLog(string msg, string stack, LogType type){
+
+            string color = "#fffde3";
+            switch (type)
+            {
+                case LogType.Error:
+                case LogType.Exception:
+                case LogType.Assert:
+                    color = "#b13c45";
+                    break;
+                case LogType.Warning:
+                    color = "yellow";
+                    break;
+                case LogType.Log:
+                    break;
+            }
+            Instance.Output(msg, color);
+        }
+
+        /// <summary>clear output of current console</summary>
+        public void ClearOutput() => Instance.ClearOutputPanel();
     }
 }

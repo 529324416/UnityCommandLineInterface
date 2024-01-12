@@ -12,6 +12,10 @@ The project is an inner game command line console. it can run as a part of your 
 <img src="./Res/屏幕截图 2024-01-04 053723.png" style="zoom:80%" />
 </div>
 
+<div align=center>
+<img src="./Res/屏幕截图 2024-01-12 173800.png" style="zoom:80%" />
+</div>
+
 ## Usage
 
 ### how to add custom commands
@@ -161,7 +165,8 @@ wait for editing
       <br> *command add query cache ability to store command query, use some space to bring more efficient query speed.*
 - [x] **Receive Unity's Debug Information v0.11** *@2024/01/06*
       <br> *console supported to receive message from `UnityEngine.Debug.Log`, you can just use Unity's Debug Function, then the console would output the message as well*
-- [ ] **Refactoring Wrapper of `GameConsole` v0.12**
-- [ ] **Generate log file of console ouput v0.13**
+- [ ] ~~**Refactoring Wrapper of `GameConsole` v0.12**~~
+- [ ] ~~**Generate log file of console ouput v0.13**~~
+      <br> Unity has its own log generator
 - [ ] **Support to Filter console output v0.13**
 - [ ] **Add More Console Renderer Features v0.2** 

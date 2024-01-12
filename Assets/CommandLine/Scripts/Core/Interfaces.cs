@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 /* 
+    使用接口描述上层逻辑的功能，目的是为了使得该模块能够保持较低的成本移植到其他引擎或者平台
     use interface between the real implemetations to decoupling the whole system's components
 */
 
@@ -47,9 +48,6 @@ namespace RedSaw.CommandLineInterface{
 
             /// <summary>activate input field</summary>
             void ActivateInput();
-
-            /// <summary>clear input field content</summary>
-            void ClearInput();
 
             /// <summary>quit focus on input field</summary>
             void QuitFocus();

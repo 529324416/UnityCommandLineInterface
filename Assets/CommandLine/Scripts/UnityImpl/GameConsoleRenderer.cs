@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 
 namespace RedSaw.CommandLineInterface.UnityImpl{
 
+    /// <summary>default implementation of IConsoleRenderer with Unity legacy UI</summary>
     public class GameConsoleRenderer : MonoBehaviour, IConsoleRenderer
     {
         [SerializeField] private Text outputPanel;
@@ -106,13 +107,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             inputField.onValueChanged.AddListener((string input) => {
                 callback?.Invoke(input);
             });
-        }
-
-
-
-        public void ClearInput()
-        {
-            inputField.text = string.Empty;
         }
 
         public void Focus()

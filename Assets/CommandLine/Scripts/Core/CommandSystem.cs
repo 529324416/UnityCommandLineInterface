@@ -481,7 +481,7 @@ namespace RedSaw.CommandLineInterface{
             this.capacity = Math.Max(1, capacity);
         }
 
-        /// <summary>cache a query result</summary>
+        /// <summary>store a query result</summary>
         /// <param name="query">query string, this must not be a empty or null value</param>
         /// <param name="result">query result, must not be a null value</param>
         public void Cache(string query, Command[] result){
@@ -674,6 +674,7 @@ namespace RedSaw.CommandLineInterface{
             .OrderByDescending(s => s.score)
             .Take(count)
             .ToArray();
+
             result = bestChoices.Select(s => s.value.Value).ToArray();
             queryBuffer.Cache(queryDetailInfo, result);
             return result;
