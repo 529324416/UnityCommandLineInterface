@@ -160,6 +160,8 @@ wait for editing
 
 ### Applicable Unity Versions
 
+Unity 2018.03+
+
 this project is highly decoupled with UnityEngine, so it can use in any version of UnityEngine.you can define custom UI system for console, and this project provide default implementation for you can learn or optimized by yourself.
 
 ## TODO List
