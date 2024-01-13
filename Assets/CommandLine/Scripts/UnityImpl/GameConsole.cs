@@ -54,22 +54,15 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         void OnDestory() => Application.logMessageReceived -= UnityConsoleLog;
 
         void UnityConsoleLog(string msg, string stack, LogType type){
-
-            string color = "#fffde3";
-            switch (type)
+            Instance.Output(msg, GetHexColor(type));
+        }
+        string GetHexColor(LogType type){
+            return type switch
             {
-                case LogType.Error:
-                case LogType.Exception:
-                case LogType.Assert:
-                    color = "#b13c45";
-                    break;
-                case LogType.Warning:
-                    color = "yellow";
-                    break;
-                case LogType.Log:
-                    break;
-            }
-            Instance.Output(msg, color);
+                LogType.Error or LogType.Exception or LogType.Assert => "#b13c45",
+                LogType.Warning => "yellow",
+                _ => "#fffde3",
+            };
         }
 
         /// <summary>clear output of current console</summary>
