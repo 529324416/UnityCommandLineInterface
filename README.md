@@ -1,5 +1,7 @@
 # UnityCommandLineInterface
 
+[![openupm](https://img.shields.io/npm/v/com.redsaw.commandline?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.redsaw.commandline/)
+
 [中文文档](./README-ch.md)
 
 ## Summary
