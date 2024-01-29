@@ -12,9 +12,7 @@
 <img src="./Res/screen-shot.png" style="zoom:80%" />
 </div>
 
-<div>
-<video src="./Res/usage.mp4" style="zoom:80%">
-</div>
+[![IMAGE ALT TEXT HERE](./Res/usage-part-1.png)](https://youtu.be/ejtAfCKEf8A)
 
 ## 特性：
 - 使用简单，无需任何额外配置或者复杂学习流程

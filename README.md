@@ -11,9 +11,7 @@ this project is an inner game command console, usually use to execute some short
 <img src="./Res/screen-shot.png" style="zoom:80%" />
 </div>
 
-<div>
-<video src="./Res/usage.mp4" style="zoom:80%">
-</div>
+[![IMAGE ALT TEXT HERE](./Res/usage-part-1.png)](https://youtu.be/ejtAfCKEf8A)
 
 ## Features：
 - **Easy to use**, no need to do much learning
