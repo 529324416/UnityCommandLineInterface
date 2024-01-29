@@ -15,7 +15,6 @@ this project is an inner game command console, usually use to execute some short
 <video src="./Res/usage.mp4" style="zoom:80%">
 </div>
 
-
 ## Features：
 - **Easy to use**, no need to do much learning
 - **Lightweight**, no dependencies
