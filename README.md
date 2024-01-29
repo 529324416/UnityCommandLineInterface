@@ -1,6 +1,6 @@
 # UnityCommandLineInterface
 
-[中文文档](./README.md)
+[中文文档](./README-ch.md)
 
 ## Summary
 this project is an inner game command console, usually use to execute some short command or set/get property
