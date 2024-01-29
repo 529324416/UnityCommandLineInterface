@@ -154,13 +154,60 @@ print "1. 1. 1.":v3
 
 maybe some wired, but it just work!
 
-### About more usage
+## Advanced Usage and more features
 
+### 1.Get command return value
 
-since it can directly access the child elements of an object, it may become ambiguous when dealing with certain issues in certain situtations, Therefore, let's take a look at some situations about system how to handle the strange input.
+usually, command should called like this `commandName param1, param2 ..` but now, it can be called like a method, so you can get member of the return value like this:
+```
+first_enemy("slime").attack(@player)
+```
 
-*Wait for editing*
+### 2.Register instance method
 
+usually, a command is a static method, but you can also register instance method and use them just like normal command. but you must visit VirtualMachine API directly. so I'm finding a more elegant way to do this.
+
+```C#
+/// <summary>
+/// register callable to vm
+/// </summary>
+/// <param name="callable">the callable object</param>
+/// <param name="shouldOverwrite">if true, vm will overwrite callable with same name</param>
+public bool RegisterCallable(StackCallable callable, bool shouldOverwrite = true){
+
+    if( callables.ContainsKey(callable.Name )) {
+        if(shouldOverwrite){
+            callables[callable.Name] = callable;
+            return true;
+        }
+        return false;
+    }
+    callables.Add(callable.Name, callable);
+    return true;
+}
+```
+
+### 3.Output Event
+
+the output method has no relationship with rendering now, so you can bind your own output method.
+
+so, the call chain is `UnityEngine.Debug.Log` -> `CommandSystem.Output` -> `YourCallback`
+
+```C#
+commandSystem.OnReceivedMessage += (Log log) => {
+    /* render the log output by your own logic */
+}
+```
+
+### 4.Sequence and IDictionary
+
+You can obtain list type objects such as sub elements of arrays or linked lists, and of course, dictionaries are the same.
+
+```
+@player_equipments[0].unequip()
+@slots[0].place(@example_elem)
+@boss.weapons["heavy-gun"].trigger()
+```
 
 ## Other
 

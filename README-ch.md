@@ -143,11 +143,59 @@ switch(input){
 @player.pos = 'pt_revival'
 ```
 
-### 关于更多用法
+## 高级用法和更多特性
 
-当然由于它可以直接访问一个对象的子元素，所以它在某些情况下处理一些问题可能会变得有歧义，所以我们来看一些比较奇怪的用法：
+### 1.获取返回值
 
-*等待文档更新*
+一般来说，命令应该是这种格式的`commandName param1 param2 ..`，但是现在它可以像一个函数一样被执行，这样一来，你就可以通过`.`来获取它的成员对象。
+
+```
+first_enemy("slime").attack(@player)
+```
+
+### 2.注册实例函数
+
+一般来说，命令都是一个静态函数，但是你也可以注册实例函数并且像普通命令一样去执行他们，不过当前系统没有提供非常优雅的方式，所以你现在只能访问虚拟机的API去手动添加。我正在寻找一种更为优雅的方式，后续会优化这个点
+
+```C#
+/// <summary>
+/// register callable to vm
+/// </summary>
+/// <param name="callable">the callable object</param>
+/// <param name="shouldOverwrite">if true, vm will overwrite callable with same name</param>
+public bool RegisterCallable(StackCallable callable, bool shouldOverwrite = true){
+
+    if( callables.ContainsKey(callable.Name )) {
+        if(shouldOverwrite){
+            callables[callable.Name] = callable;
+            return true;
+        }
+        return false;
+    }
+    callables.Add(callable.Name, callable);
+    return true;
+}
+```
+
+### 3.输出函数
+
+现在的控制台输出和渲染解耦了，所以你可以绑定一个你自己的输出函数去接受控制台输出的信息，所以这样形成了一个调用链 `UnityEngine.Debug.Log` -> `CommandSystem.Output` -> `YourCallback`
+
+```C#
+commandSystem.OnReceivedMessage += (Log log) => {
+    /* render the log output by your own logic */
+}
+```
+
+### 4.列表型对象和字典型对象
+
+你可以获取列表型对象比如数组或者链表的子元素，当然字典也是一样的
+
+```
+@player_equipments[0].unequip()
+@slots[0].place(@example_elem)
+@boss.weapons["heavy-gun"].trigger()
+```
 
 
 
