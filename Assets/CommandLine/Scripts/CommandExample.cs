@@ -35,7 +35,7 @@ public static class CommandExample
     }
 
     [CommandValueParser(typeof(Vector2), Alias = "pos2")]
-    public static bool TryParseVector2(string input, out object? data){
+    public static bool TryParseVector2(string input, out object data){
 
         string[] result= input.Trim(new char[]{'(', ')'}).Split(',');
         if(result.Length == 2){
