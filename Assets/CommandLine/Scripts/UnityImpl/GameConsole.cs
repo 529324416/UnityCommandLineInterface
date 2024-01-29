@@ -49,7 +49,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             Application.logMessageReceived += UnityConsoleLog;
         }
         void Update() => console.Update();
-        void OnDestory() => Application.logMessageReceived -= UnityConsoleLog;
+        void OnDestroy() => Application.logMessageReceived -= UnityConsoleLog;
 
         void UnityConsoleLog(string msg, string stack, LogType type){
 
