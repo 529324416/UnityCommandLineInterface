@@ -23,11 +23,8 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         }
 
         public bool IsInputFieldFocus => inputField.isFocused;
+        public int OutputPanelCapacity => outputPanelCapacity;
 
-        public int OutputPanelCapacity { 
-            get => outputPanelCapacity; 
-            set => outputPanelCapacity = Mathf.Max(100, value);
-        }
         public string InputText{
 
             get => inputField.text;
@@ -139,7 +136,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 new Vector2(outputPanel.rectTransform.sizeDelta.x, generator.GetPreferredHeight(outputPanel.text, settings));
 
                 GetComponentInChildren<ScrollRect>().verticalNormalizedPosition = 0;
-            }catch(ArgumentException){
+            }catch(Exception){
                 Clear();
             }
         }

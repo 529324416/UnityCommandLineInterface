@@ -4,23 +4,29 @@
 
 ## 简介
 
-这个项目是一个游戏内置的控制台项目，下面是项目的一些截图
+这个项目是一个游戏内置的控制台项目,主要用于执行一些简短的命令或者函数,或者用于设置某些数值等
 
 <div align=center>
-<img src="./Res/屏幕截图 2024-01-04 053723.png" style="zoom:80%" />
+<img src="./Res/screen-shot.png" style="zoom:80%" />
 </div>
 
-它由以下三个部分组成：
+<div>
+<video src="./Res/usage.mp4" style="zoom:80%">
+</div>
 
-- **命令系统**
-- **控制台行为逻辑与接口定义**
-- **控制台渲染器实现**
 
-这三个部分是高度解耦合的，也就是控制台的行为逻辑与命令系统可以自由的拆解到其他的项目中。以下是关于三个部分的使用文档。
+## 特性：
+- 使用简单，无需任何额外配置或者复杂学习流程
+- 模块间高度解耦合，其内部组件可以单独使用
+- 轻量级，无任何依赖
+- 支持输入文本提示
+- 支持自定义
+- 全版本支持
+
 
 ## 如何使用
 
-### 如何添加自定义命令
+### 1.如何添加自定义命令
 
 该项目使用特性和反射来定义和收集命令，你可以通过给函数挂载`Command`特性来定义你自己命令
 
@@ -63,102 +69,88 @@ static void Add(int a, int b){
 
 ```
 
-并不是所有的静态函数都可以被识别为一个命令，要求命令的参数列表使用以下类型的参数
+### 2.如何添加自定义变量
 
-```
-Int
-String
-Float
-Double
-Bool
-Char
-Byte
-Short
-Long
-UShort
-UInt
-ULong
-Decimal
-SByte
+控制台变量指的是可以通过`@`进行访问的静态变量，要注册一个控制台变量，你可以给目标静态属性或者静态字段挂载一个`CommandProperty`特性，它就会被识别为一个控制台变量
+
+```C#
+[CommandProperty]
+public static Player player;
 ```
 
-不过大部分情况下这些参数已经足够使用了，但是如果你希望一些特殊的函数能够使用其他的参数类型的话，可以通过注册一个类型解析函数给命令系统，比如你有一个采用`Enum`类型作为参数的函数：
+之后你可以在控制台直接对其进行访问，可访问的元素不仅是其变量本身，还包括了所有它内部的字段、属性和方法。如下所示:
 
-``````c#
-[Command]
-static void TestCommand(MyEnum value){
-	// do something..
-}
-``````
-默认情况下它是不会被识别为函数的，此时你可以注册一个格式如下所示的类型解析函数
+```
+@player.Jump()
+@player.health = 100
+@player.tag = "something"
+```
 
+并且其他需要`Player`类型参数的命令也可以直接对其进行访问
+```
+some_command @player
+```
 
-``````c#
-bool ParseFunc(string args, out object value);
-``````
+当我们对一个变量进行赋值的时候，如果该变量不存在于你定义的默认变量中，那么该系统会临时创建一个本地的变量去存储你设定的值，如下所示
 
-注册方法是给一个静态函数挂载`CommandParameterParser`特性，这个特性函数应该解析给定的字符串并通过`out`关键字返回一个`object`数据，返回一个布尔值表示这个字符串是否有效。
+```
+@pos = @player.pos
+print @pos          // 读取player的pos字段并存储于@pos中
+@player.pos = @pos  // 重设位置
+```
 
+### 3.如何添加值解析器
 
-``````c#
-[CommandParameterParser(typeof(MyEnum))]
-static bool MyEnumParser(string value, out object data){
+在测试过程中我们肯定会需要很多值的设置，但是该系统并不是一个完整的编程语言，所以它无法定义完整的值输入，比如`@player.pos = xxx`这样的命令，我们假设`pos`是`UnityEngine.Vector3`类型，那么该如何将给定的字符串或者任何输入处理为对应的类型呢？
 
-    if(System.Enum.TryParse<MyEnum>(value, out var result)){
-        data = result;
-        return true;
+此时我们需要注册一个值解析器
+
+```C#
+[CommandValueParser(typeof(Vector3), Alias = "v3")]
+public static bool ParseVector3(string input, out object data){
+    string[] result= input.Trim(new char[]{'(', ')'}).Split(',');
+    if(result.Length == 3){
+        if( float.TryParse(result[0], out float x) && 
+            float.TryParse(result[1], out float y) && 
+            float.TryParse(result[2], out float z)){
+
+            data = new Vector3(x, y, z);
+            return true;
+        }
     }
-    data = null;
+    data = default;
     return false;
 }
-``````
-
-之后它就可以正常识别并使用了
-
-<div align=center>
-<img src="./Res/屏幕截图 2024-01-04 064808.png" style="zoom:80%" />
-</div>
-
-这个特性支持你构建更多特殊的命令，比如你的命令函数需要一个`Player`或者`Enemy`这样的非基础类型参数，你可以注册一个类似的函数，并将一个字符串解析为`Player`，解析方法由你自己定义，比如下面这样
-
-```c#
-
-public class GameEntity{/* some code here..*/}
-
-[Command("handle_game_entity")]
-static void DebugCommand(GameEntity entity){
-    // do something to entity..
+```
+你需要指定将其解析为目标类型`Vector3`，并且可以选择为其设置一个别名`v3`，当然，具体的逻辑完全可以自己决定，比如你希望把`"up"`解析为`Vector3.Up`的话，可以做一个直接的判断
+```C#
+switch(input){
+    case "up":
+        data = Vector3.up;
+        return true;
+    /* ... */
 }
-
-[CommandParameterParser(typeof(GameEntity))]
-static bool GameEntityParser(string input, out object data){
-    /* fake code, just for example */
-
-    switch(input){
-        case "A":
-        case "B":
-        case "C"
-            data = gameEntities.GetByName(input);
-            return true;
-        default:
-            data = null;
-            return false;
-    }
-}
-
+```
+此后当系统遇到需要`Vector3`类型的地方，它可能会尝试利用你定义的解析器来解析目标字符串
+```
+@player.pos = "1.0, 1.0, 1.0"
 ```
 
-之后你就可以通过输入 `handle_game_entity 'A'` 来对游戏对象A做一些操作了。
+根据你的解析器的具体逻辑，你的赋值内容是可变的
 
-## 自定义命令行系统
+```
+@player.pos = '1. 1. 1.'
+@player.pos = 'up'
+@player.pos = 'pt_revival'
+```
 
-### 自定义输入
+### 关于更多用法
 
-等待文档的完善
+当然由于它可以直接访问一个对象的子元素，所以它在某些情况下处理一些问题可能会变得有歧义，所以我们来看一些比较奇怪的用法：
 
-### 自定义外观
+*等待文档更新*
 
-等待文档的完善
+
 
 ## 其他
 
@@ -168,16 +160,6 @@ Unity 2018.03+
 
 这个项目与Unity是高度解耦合的，所以它几乎可以用于所有版本的Unity，你可以为它定义自己的UI来使用，这个项目提供了默认的Unity实现，你可以学习或者自己改造。
 
+### 特性支持：基础运算
 
-## TODO List
-
-- [x] **添加命令标签 v0.11** *@2024/01/06*
-      <br> *现在你可以给命令添加标签，用于标签给命令分组用于实现一些特殊的限制，或者测试约束*
-- [x] **添加命令查询缓存 v0.11** *@2024/01/06*
-      <br> *现在查询命令会有最近20条查询记录的缓存，用一点空间换取了更高效的查询速度*
-- [x] **支持接受Unity的Debug.Log输出 v0.11** *@2024/01/06*
-      <br> *控制台提供了一个开关项用于选择是否监听UnityEngine.Debug.Log，打开时，该函数的输出结果会同时输出到控制台中，从而使你不用改变当前游戏的Debug命令*
-- [ ] ~~**重构控制台的封装结构 v0.12**~~
-- [ ] ~~**生成日志文件 v0.13**~~
-- [ ] **输出过滤 v0.13**
-- [ ] **添加更多的控制台渲染器行为逻辑** v0.2
+该系统是为了能够进行方便的debug工作而设计的，所以它的定位并不是一个完整的编程语言，所以它现在还不支持基础的运算，比如数学运算，或者逻辑运算等。如果对该类特性有需求的话，可以在github提出，如果的确有必要的话，我会实现的。

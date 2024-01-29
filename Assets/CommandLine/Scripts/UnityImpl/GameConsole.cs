@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace RedSaw.CommandLineInterface.UnityImpl{
@@ -26,7 +27,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         [SerializeField, Tooltip("static parameter, use default command?")]
         private bool useDefaultCommand = true;
 
-        ConsoleController Instance;
+        ConsoleController console;
 
         void Awake(){
             if(consoleRenderer == null){
@@ -36,25 +37,23 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             }
             gameObject.SetActive(true);
 
-            /* intialize console, you can set parameter what you like */
-            Instance = new ConsoleController(
+            /* intialize console */
+            console = new ConsoleController(
                 consoleRenderer, 
                 new UserInput(),
-                commandSystem:null,         // use default command system
-                memoryCapacity:inputHistoryCapacity,
+                commandQueryCacheCapacity:inputHistoryCapacity,
                 alternativeCommandCount:alternativeCommandCount,
                 shouldRecordFailedCommand:shouldRecordFailedCommand,
-                outputPanelCapacity:outputCapacity,
-                outputWithTime:shouldOutputWithTime,
-                useDefaultCommand:useDefaultCommand
+                outputWithTime:shouldOutputWithTime
             );
             Application.logMessageReceived += UnityConsoleLog;
         }
-        void Update() => Instance.Update();
+        void Update() => console.Update();
         void OnDestory() => Application.logMessageReceived -= UnityConsoleLog;
 
         void UnityConsoleLog(string msg, string stack, LogType type){
-            Instance.Output(msg, GetHexColor(type));
+
+            console.Output(msg, GetHexColor(type));
         }
         string GetHexColor(LogType type){
             return type switch
@@ -66,6 +65,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         }
 
         /// <summary>clear output of current console</summary>
-        public void ClearOutput() => Instance.ClearOutputPanel();
+        public void ClearOutput() => console.ClearOutputPanel();
     }
 }

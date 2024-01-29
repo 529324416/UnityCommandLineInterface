@@ -1,26 +1,34 @@
 # UnityCommandLineInterface
 
-<a href="https://openupm.com/packages/com.redsaw.commandline/"><img src="https://img.shields.io/npm/v/com.redsaw.commandline?label=openupm&amp;registry_uri=https://package.openupm.com" /></a>
+[English Document](./README.md)
 
-[中文文档](./README-ch.md)
+## 简介
 
-## Summary
-
-The project is an inner game command line console. it can run as a part of your game and provide an inner game debug and error log function. it just receives `UnityEngine.Debug.Log` method output so you have no need to change log point.
+this project is an inner game command console, usually use to execute some short command or set/get property
 
 <div align=center>
-<img src="./Res/屏幕截图 2024-01-04 053723.png" style="zoom:80%" />
+<img src="./Res/screen-shot.png" style="zoom:80%" />
 </div>
 
-<div align=center>
-<img src="./Res/屏幕截图 2024-01-12 173800.png" style="zoom:80%" />
+<div>
+<video src="./Res/usage.mp4" style="zoom:80%">
 </div>
+
+
+## Features：
+- **Easy to use**, no need to do much learning
+- **Lightweight**, no dependencies
+- **Input text suggestion**
+- **Support all versions of Unity**
+- **Highly Decoupled**,
+- **Easy to port to other platforms**
 
 ## Usage
 
-### how to add custom commands
+### 1.How add custom commands
 
-The project use Attribute and Reflection to define and collect commands, you can define your commands like this:
+The system use System.Reflections to define and collect commands, you can define your commands by adding `Command` to a static method
+
 
 ```c#
 [Command]
@@ -29,13 +37,13 @@ static void MyCommand(){
 }
 ```
 
-then it could be recognized as a command, and you can input "*MyCommand*" to call it on command line console. there's no more configures or operations.
+to call this function, just input *`MyCommand`* to the console, and no more configures.
 
 <div align=center>
 <img src="./Res/usage-part-1.png" style="zoom:80%" />
 </div>
 
-you can set name, description, tag of command like this:
+you can set name, description and tag for your commands
 
 ```c#
 
@@ -61,119 +69,109 @@ static void Add(int a, int b){
 
 ```
 
-Not all static methods could be recognized as command, the method's parameter list can only use the types defined below. 
-```
-Int
-String
-Float
-Double
-Bool
-Char
-Byte
-Short
-Long
-UShort
-UInt
-ULong
-Decimal
-SByte
+### 2.How to add custom properties
+
+The CommandProperty is that you can visit on console by `@`, to register an command property, you just need to add an attribute named `CommandProperty` like this:
+
+```C#
+[CommandProperty]
+public static Player player;
 ```
 
-Actually, these types are sufficient for use in most cases. But if you want some methods with other types of parameters to be recognized as well, you can register a parser function to the CommandSystem. for example, you have a command method with `Enum` type parameter like this:
-
-``````c#
-[Command]
-static void TestCommand(MyEnum value){
-	// do something..
-}
-``````
-In the default case, it won't be recognized as a command. so you can register a parser function with signature of this:
-
-``````c#
-bool ParseFunc(string args, out object value);
-``````
-
-The register way is to add an Attribute named `CommandParameterParser` to your function like this:
+then you can visit it by `@player`, not only the field itself but also all its fields, properties and methods.
 
 
-``````c#
-[CommandParameterParser(typeof(MyEnum))]
-static bool MyEnumParser(string value, out object data){
+```
+@player.Jump()
+@player.health = 100
+@player.tag = "something"
+```
 
-    if(System.Enum.TryParse<MyEnum>(value, out var result)){
-        data = result;
-        return true;
+and any other command need the property as a parameter.
+
+```
+some_command @player
+```
+
+the `@` is a syntax design which try to find the CommandProperty defined by you, but if we try to assign value to an command property doesn't existed, then the system would created a temp local variable. it would be cleared after quitting the game.
+
+```
+@pos = @player.pos
+print @pos          // write @player.pos to @pos
+@player.pos = @pos  // set back
+```
+
+### 3.How to add value parser
+
+Maybe we need to set some values in different type instead of some common types like string or int, but the system is not a completed Programming Language, so it cannot defined value on console, but you can register ValueParser for you can easy parse values to target type.
+for example, while we input `@player.pos = xxx`, assume that `pos` is a value of type `UnityEngine.Vector3`, you can register a ValueParse like this:
+
+```C#
+[CommandValueParser(typeof(Vector3), Alias = "v3")]
+public static bool ParseVector3(string input, out object data){
+    string[] result= input.Trim(new char[]{'(', ')'}).Split(',');
+    if(result.Length == 3){
+        if( float.TryParse(result[0], out float x) && 
+            float.TryParse(result[1], out float y) && 
+            float.TryParse(result[2], out float z)){
+
+            data = new Vector3(x, y, z);
+            return true;
+        }
     }
-    data = null;
+    data = default;
     return false;
 }
-``````
-
-Then you can use this command now.
-
-<div align=center>
-<img src="./Res/屏幕截图 2024-01-04 064808.png" style="zoom:80%" />
-</div>
-
-this could make it easier to do some debug or testing work, for example, your debug method need a parameter like Player or Enemy, then you can convert it from string input by your custom parser function, looks like below:
-
-```c#
-
-public class GameEntity{/* some code here..*/}
-
-[Command("handle_game_entity")]
-static void DebugCommand(GameEntity entity){
-    // do something to entity..
-}
-
-[CommandParameterParser(typeof(GameEntity))]
-static bool GameEntityParser(string input, out object data){
-    /* fake code, just for example */
-
-    switch(input){
-        case "A":
-        case "B":
-        case "C"
-            data = gameEntities.GetByName(input);
-            return true;
-        default:
-            data = null;
-            return false;
-    }
-}
-
 ```
 
-then you can input `handle_game_entity 'A'` to do something to the entity A.
+we send a `Type` parameter to tell system, the ValueParser is target on `Vector3`, and you can set an Alias for it, here is `v3`. of course, you can determine the detailed logic, for example, if you want to parse `"up"` to `Vector3.up`, you can do it like this :
 
-## Custom the console 
+```C#
+switch(input){
+    case "up":
+        data = Vector3.up;
+        return true;
+    /* ... */
+}
+```
+then, when system need `Vector3` as parameter or input, it will try to find a suitable ValueParser to handle it
 
-### define custom Input
+```
+@player.pos = "1.0, 1.0, 1.0"
+```
 
-wait for editing
+according to your parse method, the command input would be like this:
 
-### custom ui theme
+```
+@player.pos = '1. 1. 1.'
+@player.pos = 'up'
+@player.pos = 'pt_revival'
+```
 
-wait for editing
+and if we just want to manually pointed the convert type, we can use `:` behind your string input like this
+
+```
+print "1. 1. 1.":v3
+```
+
+maybe some wired, but it just work!
+
+### About more usage
+
+
+since it can directly access the child elements of an object, it may become ambiguous when dealing with certain issues in certain situtations, Therefore, let's take a look at some situations about system how to handle the strange input.
+
+*Wait for editing*
+
 
 ## Other
 
-### Applicable Unity Versions
+### UnityEngine Versions
 
 Unity 2018.03+
 
-this project is highly decoupled with UnityEngine, so it can use in any version of UnityEngine.you can define custom UI system for console, and this project provide default implementation for you can learn or optimized by yourself.
+it support all version.
 
-## TODO List
+### Feature Support: Basic Calculation
 
-- [x] **Add Command Tag Defination v0.11** *@2024/01/06*
-      <br> *you can add tag for your command so your can group them by tag, to hide or constraint some command usage*
-- [x] **Add Command Query Cache v0.11** *@2024/01/06*
-      <br> *command add query cache ability to store command query, use some space to bring more efficient query speed.*
-- [x] **Receive Unity's Debug Information v0.11** *@2024/01/06*
-      <br> *console supported to receive message from `UnityEngine.Debug.Log`, you can just use Unity's Debug Function, then the console would output the message as well*
-- [ ] ~~**Refactoring Wrapper of `GameConsole` v0.12**~~
-- [ ] ~~**Generate log file of console ouput v0.13**~~
-      <br> Unity has its own log generator
-- [ ] **Support to Filter console output v0.13**
-- [ ] **Add More Console Renderer Features v0.2** 
+The system is designed for convenient debugging work, so its positioning it not a complete programing language, so it currently does not support basic operations such as mathematical or logical operations, if there is a need for this feature, you can proposed on Github, if it is indeed necessary, I will implement it.
