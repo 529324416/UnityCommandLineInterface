@@ -2,8 +2,7 @@
 
 [English Document](./README.md)
 
-## 简介
-
+## Summary
 this project is an inner game command console, usually use to execute some short command or set/get property
 
 <div align=center>
