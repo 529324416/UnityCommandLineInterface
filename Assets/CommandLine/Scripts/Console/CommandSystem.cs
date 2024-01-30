@@ -13,10 +13,9 @@ version : 0.2.0
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
+
 
 namespace RedSaw.CommandLineInterface{
 
@@ -86,16 +85,25 @@ namespace RedSaw.CommandLineInterface{
                 foreach(var propertyInfo in type.GetProperties(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)){
                     var attribute = propertyInfo.GetCustomAttribute<T>();
                     if(attribute != null){
-                        var property = new StackPropertyProperty(attribute.Name ?? propertyInfo.Name, attribute.Desc, attribute.Tag, null, propertyInfo);
-                        yield return property;
+                        var ppt = propertyInfo.CreateStackProperty(
+                            attribute.Name ?? propertyInfo.Name,
+                            attribute.Desc,
+                            attribute.Tag
+                        );
+                        if( ppt != null ) yield return ppt;
+
                     }
                 }
 
                 foreach(var fieldInfo in type.GetFields(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)){
                     var attribute = fieldInfo.GetCustomAttribute<T>();
                     if(attribute != null){
-                        var property = new StackPropertyField(attribute.Name ?? fieldInfo.Name, attribute.Desc, attribute.Tag, null, fieldInfo);
-                        yield return property;
+                        var ppt = fieldInfo.CreateStackProperty(
+                            attribute.Name ?? fieldInfo.Name,
+                            attribute.Desc,
+                            attribute.Tag
+                        );
+                        if( ppt != null ) yield return ppt;
                     }
                 }
             }
@@ -140,29 +148,6 @@ namespace RedSaw.CommandLineInterface{
             return true;
         }
 
-        // /// <summary>create a command from a method</summary>
-        // /// <param name="methodInfo">method info defined <b>CommandAttribute</b></param>
-        // /// <param name="attr">the target command attribute</param>
-        // /// <param name="command">result command</param>
-        // /// <returns>return true if success</returns>
-        // static bool CreateCommand(MethodInfo methodInfo, CommandAttribute attr, out Command command){
-
-        //     /* check if target type has been supported by invoker */
-        //     ParameterInfo[] parameters = methodInfo.GetParameters();
-        //     if(parameters.Length > 0){
-        //         foreach(ParameterInfo parameter in parameters){
-        //             if(CommandParameterHandle.ContainsParser(parameter.ParameterType))continue;
-        //             command = default;
-        //             return false;
-        //         }
-        //     }
-
-        //     /* command name should be the one defined in attribute, if client not set a name
-        //        then would use method name as default */
-        //     string commandName = attr.Name ?? methodInfo.Name;
-        //     command = new Command(commandName, attr.Desc, null, methodInfo);
-        //     return true;
-        // }
     }
 
     /// <summary>query buffer</summary>
@@ -234,7 +219,6 @@ namespace RedSaw.CommandLineInterface{
             int typeReflectionQueryCache = 20,
             int commandQueryCacheCapacity = 20,
             int variableQueryCacheCapacity = 20,
-            int logCapacity = -1,
             bool IgnoreInvalidSetBehaviour = true,
             bool ReceiveValueFromNonStringType = true,
             bool TreatVoidAsNull = true
@@ -249,9 +233,6 @@ namespace RedSaw.CommandLineInterface{
                 TreatVoidAsNull
             );
             charAutomaton = new(vm.GetPropertyType);
-
-            this.logCapacity = logCapacity;
-            hasLogCapacity = logCapacity > 0;
 
             QC_command = new(commandQueryCacheCapacity);
             QC_variable = new(variableQueryCacheCapacity);
@@ -303,7 +284,7 @@ namespace RedSaw.CommandLineInterface{
         public void RegisterValueParser(Type type, ValueParser parser, string alias = null) => vm.RegisterValueParser(type, parser, alias);
 
         /// <summary>register a new console value parser</summary>
-        public void RegisterValueParser<T>(ValueParser parser, string alias = null) => vm.RegisterValueParser(typeof(T), parser, alias);
+        public void RegisterValueParser<TType>(ValueParser parser, string alias = null) => vm.RegisterValueParser(typeof(TType), parser, alias);
 
         /// <summary>get variable created at runtime</summary>
         public object GetLocalVariable(string name) => vm.GetLocalVariable(name);
@@ -432,127 +413,7 @@ namespace RedSaw.CommandLineInterface{
     #region About Logs
     public partial class CommandSystem{
 
-        /* about output logs */
 
-        /// <summary>console log</summary>
-        public readonly struct Log{
-
-            public static Log Empty => new(string.Empty, -1);
-
-            public readonly string message;
-            public readonly string color;
-            public readonly int tag;
-            public readonly bool HasColor => 
-                color != null && color.Length > 0;
-
-            public Log(string message, string color, int tag = -1){
-
-                this.message = message;
-                this.color = color;
-                this.tag = tag > 0 ? -1 : tag;
-            }
-
-            public Log(string message, int tag = -1){
-
-                this.message = message;
-                this.color = null;
-                this.tag = tag < 0 ? -1 : tag;
-            }
-            public override string ToString(){
-                return color != null ? $"<color={color}>{message}</color>" : message;
-            }
-            public bool CompareTag(int tag){
-
-                if( this.tag < 0 )return true;
-                return this.tag == tag;
-            }
-        }
-
-        /// <summary>
-        /// this event would triggered while receive messages
-        /// </summary>
-        public event Action<Log> OnReceivedMessage;
-        readonly int logCapacity;
-        readonly bool hasLogCapacity; 
-
-        readonly List<Log> logs = new();
-
-        /// <summary>
-        /// output a debug log on console, if info is null, then the tag would work on it
-        /// </summary>
-        public void Output(string info, int tag = -1){
-
-            if( info == null || info.Length == 0 ){
-                Output(Log.Empty);
-                return;
-            }
-            Output(new(info, tag));
-        }
-        /// <summary>
-        /// output a debug log on console, if info is null, then the tag would work on it,
-        /// the color should in format of '#ffffff';
-        /// </summary>
-        public void Output(string info, string color, int tag = -1){
-
-            if( color == null || color.Length == 0 ){
-                Output(info, tag);
-                return;
-            }
-            if( info == null || info.Length == 0 ){
-                Output(Log.Empty);
-                return;
-            }
-            Output(new(info, color, tag));
-        }
-
-        void Output(Log log){
-            /* trigger event */
-
-            logs.Add(log);
-            if( hasLogCapacity && logs.Count >= logCapacity ){
-                logs.RemoveAt(0);
-            }
-            OnReceivedMessage?.Invoke(log);
-        }
-
-        /// <summary>
-        /// get total logs of current console
-        /// </summary>
-        public IEnumerable<Log> AllLogs => logs;
-
-        /// <summary>
-        /// get last logs
-        /// </summary>
-        public IEnumerable<Log> GetLastLogs( int count ){
-
-            if( count == 0 )yield break;
-            count = Math.Min(count, logs.Count);
-            int L = logs.Count - count;
-            int R = L + count;
-            for( int i = L; i < R; i ++ ){
-                yield return logs[i];
-            }
-        }
-
-        /// <summary>
-        /// get last logs with target tag
-        /// </summary>
-        public IEnumerable<Log> GetLastLogs( int count, int tag = -1 ){
-
-            if( tag == -1 ){
-                foreach(var log in GetLastLogs(count)){
-                    yield return log;
-                }
-            }
-
-            if( count == 0 )yield break;
-            foreach(var log in logs){
-                if( log.CompareTag(tag) ){
-                    yield return log;
-                }
-                if( -- count <= 0 )break;
-            }
-        }
     }
     #endregion
 

@@ -116,12 +116,154 @@ namespace RedSaw.CommandLineInterface{
         }
     }
 
+
+    public class LogManager<T> where T : Enum{
+        /* about output logs */
+
+        /// <summary>console log</summary>
+        public readonly struct Log{
+
+            public static Log Empty => new(string.Empty, default);
+
+            public readonly string message;
+            public readonly string color;
+            public readonly T logType;
+
+            public readonly bool HasColor => 
+                color != null && color.Length > 0;
+
+            public Log(string message, string color, T logType = default){
+
+                this.message = message;
+                this.color = color;
+                this.logType = logType;
+            }
+
+            public Log(string message, T logType = default){
+
+                this.message = message;
+                this.color = null;
+                this.logType = logType;
+            }
+            public override string ToString(){
+                return color != null ? $"<color={color}>{message}</color>" : message;
+            }
+        }
+
+        /// <summary>
+        /// this event would triggered while receive messages
+        /// </summary>
+        public event Action<Log> OnReceivedMessage;
+        readonly int logCapacity;
+        readonly bool hasLogCapacity; 
+
+        readonly List<Log> logs = new();
+
+        /// <summary>
+        /// initialize log manager
+        /// </summary>
+        /// <param name="logCapacity">the capacity of logs, -1 as infinite</param>
+        public LogManager(int logCapacity = -1){
+
+            this.logCapacity = logCapacity;
+            this.hasLogCapacity = logCapacity > 0;
+        }
+
+        /// <summary>
+        /// output a debug log on console, if info is null, then the tag would work on it
+        /// </summary>
+        public void Output(string info, T type = default){
+
+            if( info == null || info.Length == 0 ){
+                Output(Log.Empty);
+                return;
+            }
+            Output(new(info, type));
+        }
+        /// <summary>
+        /// output a debug log on console, if info is null, then the tag would work on it,
+        /// the color should in format of '#ffffff';
+        /// </summary>
+        public void Output(string info, string color, T type = default){
+
+            if( color == null || color.Length == 0 ){
+                Output(info, type);
+                return;
+            }
+            if( info == null || info.Length == 0 ){
+                Output(Log.Empty);
+                return;
+            }
+            Output(new(info, color, type));
+        }
+
+        void Output(Log log){
+            /* trigger event */
+
+            logs.Add(log);
+            if( hasLogCapacity && logs.Count >= logCapacity ){
+                logs.RemoveAt(0);
+            }
+            OnReceivedMessage?.Invoke(log);
+        }
+
+        /// <summary>
+        /// get total logs of current console
+        /// </summary>
+        public IEnumerable<Log> AllLogs => logs;
+
+        /// <summary>
+        /// get last logs
+        /// </summary>
+        public IEnumerable<Log> GetLastLogs( int count ){
+
+            if( count == 0 )yield break;
+            count = Math.Min(count, logs.Count);
+            int L = logs.Count - count;
+            int R = L + count;
+            for( int i = L; i < R; i ++ ){
+                yield return logs[i];
+            }
+        }
+
+        /// <summary>
+        /// get last logs with target tag
+        /// </summary>
+        public IEnumerable<Log> GetLastLogs( int count, T type = default ){
+
+            if( count == 0 )yield break;
+            foreach(var log in logs){
+                if( log.logType.Equals(type) ){
+                    yield return log;
+                }
+                if( -- count <= 0 )break;
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /// <summary>command console</summary>
-    public class ConsoleController{
+    public class ConsoleController<TLog> where TLog : Enum{
 
         readonly IConsoleRenderer renderer;
         readonly IConsoleInput userInput;
         readonly CommandSystem commandSystem;
+        readonly LogManager<TLog> logManager;
 
         public event Action OnFocusOut;
         public event Action OnFocus;
@@ -157,6 +299,7 @@ namespace RedSaw.CommandLineInterface{
             IConsoleRenderer renderer, 
             IConsoleInput userInput,
 
+            int logCapacity = -1,
             int inputHistoryCapacity = 20,
             int commandQueryCacheCapacity = 20,
             int alternativeCommandCount = 8,
@@ -176,7 +319,9 @@ namespace RedSaw.CommandLineInterface{
             commandSystem = new CommandSystem(
                 commandQueryCacheCapacity:commandQueryCacheCapacity
             );
-            commandSystem.OnReceivedMessage += log => {
+
+            logManager = new LogManager<TLog>(logCapacity);
+            logManager.OnReceivedMessage += log => {
 
                 if(log.HasColor){
                     renderer.Output(log.message, log.color);
@@ -262,23 +407,24 @@ namespace RedSaw.CommandLineInterface{
         }
 
         /// <summary>Output message on console</summary>
-        public void Output(string msg) => commandSystem.Output(AddTimeInfo(msg));
+        public void Output(string msg) => 
+            logManager.Output(AddTimeInfo(msg));
 
         /// <summary>Output message on console with given color</summary>
-        public void Output(string msg, string color = "#ffffff") => commandSystem.Output(AddTimeInfo(msg), color);
+        public void Output(string msg, string color = "#ffffff") => logManager.Output(AddTimeInfo(msg), color);
 
         /// <summary>Output messages on console</summary>
         public void Output(string[] msgs, string color = "#ffffff"){
 
             foreach(var m in AddTimeInfo(msgs))
-                commandSystem.Output(m, color);
+                logManager.Output(m, color);
         }
 
         /// <summary>Output messages on console</summary>
         public void Output(string[] msgs){
 
             foreach(var m in AddTimeInfo(msgs))
-                commandSystem.Output(m);
+                logManager.Output(m);
         }
 
         /// <summary>clear current console</summary>
