@@ -11,6 +11,10 @@ this project is an inner game command console, usually use to execute some short
 <img src="./Res/screen-shot.png" style="zoom:80%" />
 </div>
 
+
+https://github.com/529324416/UnityCommandLineInterface/assets/30776995/a2290fff-ffa5-421f-8a4a-a5274e9c6d87
+
+
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/HQMoOMZ4Ed8/0.jpg)](https://www.youtube.com/watch?v=HQMoOMZ4Ed8)
 
 ## Features：
