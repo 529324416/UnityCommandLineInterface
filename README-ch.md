@@ -12,7 +12,7 @@
 <img src="./Res/screen-shot.png" style="zoom:80%" />
 </div>
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/HQMoOMZ4Ed8/0.jpg)](https://www.youtube.com/watch?v=HQMoOMZ4Ed8)
+https://github.com/529324416/UnityCommandLineInterface/assets/30776995/a2290fff-ffa5-421f-8a4a-a5274e9c6d87
 
 ## 特性：
 - 使用简单，无需任何额外配置或者复杂学习流程
