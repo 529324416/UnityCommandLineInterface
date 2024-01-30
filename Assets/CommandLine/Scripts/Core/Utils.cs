@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace RedSaw.CommandLineInterface{
 
-    public static class DefaultTypeParserDefination{
+    static class DefaultTypeParserDefination{
 
         /// <summary>default type parsers</summary>
         public static Dictionary<Type, ValueParser> DefaultTypeParser{
@@ -354,7 +354,6 @@ namespace RedSaw.CommandLineInterface{
             throw new CommandExecuteException($"cannot set element of \"{instanceType}\" object");
         }
     
-
         /// <summary>try to get element type of given instance like a Array or List</summary>
         /// <param name="instance">the array like instance</param>
         public static Type GetElementTypeOfArray(object instance){
