@@ -458,18 +458,11 @@ namespace RedSaw.CommandLineInterface{
 
 
         /// <summary>
-        /// check if target propertyInfo is static and only return true if both getter and setter are static
+        /// check if target propertyInfo is static 
         /// </summary>
         public static bool IsStatic(this PropertyInfo propertyInfo){
 
-            var getter = propertyInfo.GetGetMethod();
-            if( getter != null && getter.IsStatic ) 
-                return true;
-            var setter = propertyInfo.GetSetMethod();
-            if( setter != null && setter.IsStatic ) 
-                return true;
-
-            return false;
+            return propertyInfo.GetMethod?.IsStatic ?? propertyInfo.SetMethod?.IsStatic ?? false;
         }
 
         /// <summary>
@@ -557,6 +550,19 @@ namespace RedSaw.CommandLineInterface{
             if( instance == null ) return fieldInfo.CreateStackProperty(name);
             return new StackPropertyField(name, instance, fieldInfo);
         }
+
+        public static StackProperty CreateStackProperty(this FieldInfo fieldInfo, string name, string description, string tag){
+
+            if( fieldInfo.IsStatic ) return new StackPropertyField(name, description, tag, null, fieldInfo);
+            return null;
+        }
+
+        public static StackProperty CreateStackProperty(this FieldInfo fieldInfo, object instance, string name, string description, string tag){
+
+            if( instance == null ) return fieldInfo.CreateStackProperty(name, description, tag);
+            return new StackPropertyField(name, description, tag, instance, fieldInfo);
+        }
+
 
         /// <summary>
         /// create a stack callable from given methodInfo
