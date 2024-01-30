@@ -18,53 +18,114 @@ using System.Collections.Generic;
 namespace RedSaw.CommandLineInterface{
 
     /// <summary>
-    /// mark any object with a getter interface
+    /// mark any object with a value getter method
     /// </summary>
     public interface IValueGetter{
 
+        /// <summary> type of target value </summary>
+        Type ValueType{ get; }
+
+        /// <summary> get value </summary>
         object GetValue();
     }
 
     /// <summary>
-    /// mark any object with a setter interface
+    /// mark any object with a value setter method
     /// </summary>
     public interface IValueSetter{
 
+        /// <summary> the decleared name of target field or property </summary>
         string Name { get; }
+
+        /// <summary> type of target value </summary>
         Type ValueType { get; }
+
+        /// <summary> set value </summary>
         void SetValue(object value);
     }
 
+    public enum StackObjectType{
+
+        /// <summary>
+        /// an object which maintain a value and provide only getter
+        /// </summary>
+        ValueGetter,
+
+        /// <summary>
+        /// an object which maintain a value and provide only setter
+        /// </summary>
+        ValueSetter,
+
+        /// <summary>
+        /// an object maintance a value and provide both getter and setter
+        /// </summary>
+        ValueProperty,
+
+        /// <summary>
+        /// an object which can be called
+        /// </summary>
+        Callable,
+
+        /// <summary>
+        /// unknown type
+        /// </summary>
+        Any
+    }
+
     /// <summary>
-    /// the stack object of simple virtual machine
+    /// represent the base value type of VirtualMachine stack, use to 
+    /// wrap a value or a callable object
     /// </summary>
     public abstract class StackObject{
 
-        public readonly string typeName;
-        public StackObject(string typeName){
-            this.typeName = typeName;
+        /// <summary>
+        /// used to identify the type of stack object
+        /// </summary>
+        public readonly StackObjectType stackType;
+
+        public StackObject(StackObjectType stackType){
+
+            this.stackType = stackType;
         }
     }
 
     /// <summary>
     /// the stack object which maintain a value and provide both getter and setter,
-    /// the IValueGetter has only getter
     /// </summary>
     public abstract class StackProperty : StackObject, IValueGetter, IValueSetter{
 
         public readonly string name;
         public readonly string description;
         public readonly string tag;
-        public StackProperty(string name, string description, string tag, string typeName) : base(typeName){
+
+        public StackProperty(string name, string description, string tag) : base(StackObjectType.ValueProperty){
+
             this.name = name;
             this.description = description;
             this.tag = tag;
         }
-        public abstract object GetValue();
+        public StackProperty(string name) : base(StackObjectType.ValueProperty){
+
+            this.name = name;
+            this.description = string.Empty;
+            this.tag = null;
+        }
+
 
         public virtual string Name => name;
+
+        /// <summary> the type of target value </summary>
         public abstract Type ValueType{ get; }
+
+        /// <summary> value getter </summary>
+        public abstract object GetValue();
+
+        /// <summary> value setter </summary>
         public abstract void SetValue(object value);
+
+        /// <summary>
+        /// check if target tag is same as this tag, if this tag is null, then return true
+        /// </summary>
         public bool CompareTag(string tag){
 
             if(this.tag == null)return true;
@@ -73,7 +134,7 @@ namespace RedSaw.CommandLineInterface{
     }
 
     /// <summary>
-    /// target is a PropertyInfo
+    /// StackProperty implementation based on Reflection.PropertyInfo,
     /// </summary>
     public class StackPropertyProperty : StackProperty{
 
@@ -82,42 +143,77 @@ namespace RedSaw.CommandLineInterface{
         public override Type ValueType => propertyInfo.PropertyType;
 
         public StackPropertyProperty(string name, string description, string tag, object instance, PropertyInfo propertyInfo) 
-        : base(name, description, tag, propertyInfo.PropertyType.Name){
+        : base(name, description, tag){
 
             this.instance = instance;
             this.propertyInfo = propertyInfo;
         }
-        public StackPropertyProperty(object instance, PropertyInfo propertyInfo) : base(string.Empty, string.Empty, string.Empty, propertyInfo.PropertyType.Name){
+        public StackPropertyProperty(string name, object instance, PropertyInfo propertyInfo) : base(name){
 
             this.instance = instance;
             this.propertyInfo = propertyInfo;
         }
-        public override object GetValue()
-        {
-            return propertyInfo.GetValue(instance);
-        }
+        public override object GetValue() => propertyInfo.GetValue(instance);
+        public override void SetValue(object value) => propertyInfo.SetValue(instance, value);
+    }
+
+    /// <summary>
+    /// created from PropertyInfo which has only getter
+    /// </summary>
+    public class StackPropertyPropertyOnlyGetter : StackPropertyProperty
+    {
+        public StackPropertyPropertyOnlyGetter(string name, object instance, PropertyInfo propertyInfo):
+        base(name, instance, propertyInfo){}
+
+        public StackPropertyPropertyOnlyGetter(string name, string description, string tag, object instance, PropertyInfo propertyInfo):
+        base(name, description, tag, instance, propertyInfo){}
+
+        public override Type ValueType => propertyInfo.PropertyType;
+        public override object GetValue() => propertyInfo.GetValue(instance);
         public override void SetValue(object value)
         {
-            propertyInfo.SetValue(instance, value);
+            throw new CommandExecuteException($"property \"{propertyInfo.Name} ({propertyInfo.PropertyType})\" has no setter");
         }
     }
 
     /// <summary>
-    /// target is a FieldInfo
+    /// created from PropertyInfo which has only setter
+    /// </summary>
+    public class StackPropertyPropertyOnlySetter : StackPropertyProperty{
+
+        public StackPropertyPropertyOnlySetter(string name, object instance, PropertyInfo propertyInfo):
+        base(name, instance, propertyInfo){}
+
+        public StackPropertyPropertyOnlySetter(string name, string description, string tag, object instance, PropertyInfo propertyInfo):
+        base(name, description, tag, instance, propertyInfo){}
+
+        public override Type ValueType => propertyInfo.PropertyType;
+        public override object GetValue()
+        {
+            throw new CommandExecuteException($"property \"{propertyInfo.Name} ({propertyInfo.PropertyType})\" has no getter");
+        }
+        public override void SetValue(object value) => propertyInfo.SetValue(instance, value);
+    }
+
+
+
+    /// <summary>
+    /// StackProperty implementation based on Reflection.FieldInfo
     /// </summary>
     public class StackPropertyField : StackProperty{
             
         public readonly FieldInfo fieldInfo;
         public readonly object instance;
+
         public override Type ValueType => fieldInfo.FieldType;
-        public StackPropertyField(string name, string description, string tag, object instance, FieldInfo fieldInfo) 
-        : base(name, description, tag, fieldInfo.FieldType.Name){
+
+        public StackPropertyField(string name, string description, string tag, object instance, FieldInfo fieldInfo):base(name, description, tag){
 
             this.instance = instance;
             this.fieldInfo = fieldInfo;
         }
-        public StackPropertyField(object instance, FieldInfo fieldInfo) : base(string.Empty, string.Empty, string.Empty, fieldInfo.FieldType.Name){
-
+        public StackPropertyField(string name, object instance, FieldInfo fieldInfo) : base(name)
+        {
             this.instance = instance;
             this.fieldInfo = fieldInfo;
         }
@@ -144,10 +240,10 @@ namespace RedSaw.CommandLineInterface{
                 return value.GetType();
             }
         }
-        public StackPropertyCustom(string name) : base(name, string.Empty, string.Empty, "Variable"){
+        public StackPropertyCustom(string name) : base(name){
             this.value = null;
         }
-        public StackPropertyCustom(string name, object initValue) : base(name, string.Empty, string.Empty, "Variable"){
+        public StackPropertyCustom(string name, object initValue) : base(name){
             this.value = initValue;
         }
         public override object GetValue()
@@ -175,13 +271,13 @@ namespace RedSaw.CommandLineInterface{
                 float floatValue => new StackFloat(floatValue),
                 string strValue => new StackString(strValue),
                 bool boolValue => boolValue ? StackBool.True : StackBool.False,
-                _ => new StackValue(value, value.GetType().Name),
+                _ => new StackValue(value),
             };
         }
 
-            
         public readonly object value;
-        public StackValue(object value, string typeName) : base(typeName){
+        public virtual Type ValueType => value?.GetType() ?? typeof(void);
+        public StackValue(object value) : base( StackObjectType.ValueGetter ){
             this.value = value;
         }
         public object GetValue(){
@@ -189,23 +285,26 @@ namespace RedSaw.CommandLineInterface{
         }
     }
     public class StackFloat : StackValue{
-        
+
+        public override Type ValueType => typeof(float);
         public readonly float floatValue;
-        public StackFloat(float value) : base(value, "float"){
+        public StackFloat(float value) : base(value){
             floatValue = value;
         }
     }
     public class StackInt : StackValue{
         
+        public override Type ValueType => typeof(int);
         public readonly int intValue;
-        public StackInt(int value) : base(value, "int"){
+        public StackInt(int value) : base(value){
             intValue = value;
         }
     }
     public class StackString : StackValue{
-        
+    
+        public override Type ValueType => typeof(string);
         public readonly string strValue;
-        public StackString(string value) : base(value, "string"){
+        public StackString(string value) : base(value){
             strValue = value;
         }
     }
@@ -214,21 +313,23 @@ namespace RedSaw.CommandLineInterface{
         public static StackBool True => new(true);
         public static StackBool False => new(false);
         
+        public override Type ValueType => typeof(bool);
         public readonly bool boolValue;
-        public StackBool(bool value) : base(value, "bool"){
+        public StackBool(bool value) : base(value){
             boolValue = value;
         }
     }
     public class StackNull : StackValue{
 
+        public override Type ValueType => typeof(void);
         public static StackNull Default => new();
-        public StackNull() : base(null, "null"){}
+        public StackNull() : base(null){}
     }
 
     /// <summary>
     /// a source input without any decorator like "" or @
-    /// usually, system would treat it as a command call
-    /// but if it's not a command, then it would be parsed to a normal value according to 
+    /// usually, system would treat it as a command call,
+    /// but if it's not a command, then it would be parsed to a normal value accorrding to 
     /// required type, if required type is null, then it would be treated as a string
     /// it string is not suitable for target type, then system would raise en error to tell user
     /// <para> example1 : @a = xxx </para>
@@ -242,7 +343,7 @@ namespace RedSaw.CommandLineInterface{
         /// <summary>the input string</summary>
         public readonly string inputStr;
         
-        public StackSourceInput(string inputStr) : base("CommandInput"){
+        public StackSourceInput(string inputStr) : base( StackObjectType.Any ){
             this.inputStr = inputStr;
         }
         public object GetValue(){
@@ -262,7 +363,7 @@ namespace RedSaw.CommandLineInterface{
         /// <summary> parameter count </summary>
         public abstract int ParameterCount { get; }
 
-        public StackCallable() : base("VM.Callable"){}
+        public StackCallable() : base(StackObjectType.Callable){}
 
         /// <summary> get parameter information </summary>
         public abstract ParameterInfo GetParameter(int index);
@@ -286,7 +387,7 @@ namespace RedSaw.CommandLineInterface{
 
 
     /// <summary>
-    /// the object can be called, usually it's a MethodInfo
+    /// callable object based on MethodInfo, it could be static or instance method.
     /// </summary>
     public class StackMethod : StackCallable{
 
@@ -323,6 +424,9 @@ namespace RedSaw.CommandLineInterface{
         public StackMethod(MethodInfo methodInfo) : base(){
 
             this.methodInfo = methodInfo;
+            if( !methodInfo.IsStatic ){
+                throw new CommandExecuteException($"require static method but get instance method \"{methodInfo.Name}\" in \"{methodInfo.DeclaringType}\"");
+            }
             parameters = methodInfo.GetParameters();
         }
 
@@ -1006,13 +1110,17 @@ namespace RedSaw.CommandLineInterface{
             StackProperty instancePropertyHandle;
             switch(member.MemberType){
                 case MemberTypes.Field:
-                    memberType = ((FieldInfo)member).FieldType;
-                    instancePropertyHandle = new StackPropertyField(instance, (FieldInfo)member);
+                    var fld = (FieldInfo)member;
+                    memberType = fld.FieldType;
+                    instancePropertyHandle = fld.CreateStackProperty(instance, memberName) ?? 
+                        throw new CommandExecuteException($"cannot write value to \"{memberName}\" of \"{instanceType}\" near \"{node.DebugInfo}\"");
                     break;
 
                 case MemberTypes.Property:
-                    memberType = ((PropertyInfo)member).PropertyType;
-                    instancePropertyHandle = new StackPropertyProperty(instance, (PropertyInfo)member);
+                    var ppt = (PropertyInfo)member;
+                    memberType = ppt.PropertyType;
+                    instancePropertyHandle = ppt.CreateStackProperty(instance, memberName) ?? 
+                        throw new CommandExecuteException($"cannot write value to \"{memberName}\" of \"{instanceType}\" near \"{node.DebugInfo}\"");
                     break;
 
                 default:
@@ -1034,7 +1142,7 @@ namespace RedSaw.CommandLineInterface{
                 }
                 throw new CommandExecuteException($"cannot parse \"{inputContainer.inputStr}\" to type {memberType} near \"{node.DebugInfo}\"");
             }else{
-                throw new CommandExecuteException($"cannot assign <{stackValue.typeName}> to {stackValue.typeName} near \"{node.DebugInfo}\"");
+                throw new CommandExecuteException($"cannot assign <{stackValue.stackType}> to {stackValue.stackType} near \"{node.DebugInfo}\"");
             }
             SetProperty(instancePropertyHandle, value, node.DebugInfo);
         }
@@ -1067,7 +1175,7 @@ namespace RedSaw.CommandLineInterface{
                 if( stackValue is StackSourceInput inputContainer ){
                     instance = inputContainer.inputStr;
                 }else{
-                    throw new CommandExecuteException($"cannot get member from <{stackValue.typeName}> near \"{node.DebugInfo}\"");
+                    throw new CommandExecuteException($"cannot get member from <{stackValue.stackType}> near \"{node.DebugInfo}\"");
                 }
             }
             var instanceType = instance.GetType();
@@ -1078,9 +1186,18 @@ namespace RedSaw.CommandLineInterface{
                 ?? throw new CommandExecuteException($"\"{instanceType}\" has no member named \"{memberName}\" near \"{node.DebugInfo}\"");
             StackObject result = member.MemberType switch
             {
-                MemberTypes.Field => new StackPropertyField(instance, (FieldInfo)member),
-                MemberTypes.Property => new StackPropertyProperty(instance, (PropertyInfo)member),
-                MemberTypes.Method => new StackMethod(instance, (MethodInfo)member),
+                /* create property from FieldInfo */
+                MemberTypes.Field => ((FieldInfo)member).CreateStackProperty(instance, memberName) ??
+                    throw new CommandExecuteException($"invalid member dot \"{memberName}\" from {stackValue.GetType()} around \"{node.DebugInfo}\""),
+
+                /* create property from PropertyInfo */
+                MemberTypes.Property => ((PropertyInfo)member).CreateStackProperty(instance, memberName) ??
+                    throw new CommandExecuteException($"invalid member dot \"{memberName}\" from {stackValue.GetType()} around \"{node.DebugInfo}\""),
+
+                /* create method from method */
+                MemberTypes.Method => ((MethodInfo)member).CreateStackCallable(instance) ?? 
+                    throw new CommandExecuteException($"invalid member dot \"{memberName}\" from {stackValue.GetType()} around \"{node.DebugInfo}\""),
+
                 _ => throw new CommandExecuteException($"cannot get member \"{memberName}\" from {stackValue.GetType()} around \"{node.DebugInfo}\""),
             };
             _stack.Push(result);
@@ -1220,7 +1337,7 @@ namespace RedSaw.CommandLineInterface{
                 throw new CommandExecuteException($"cannot parse \"{inputStr}\" to type {status.requiredType} near \"{node.DebugInfo}\"");
             }
 
-            throw new CommandExecuteException($"<{stackValue.typeName}> is not callable near \"{node.DebugInfo}\"");
+            throw new CommandExecuteException($"<{stackValue.stackType}> is not callable near \"{node.DebugInfo}\"");
         }
 
         /// <summary>
@@ -1233,7 +1350,7 @@ namespace RedSaw.CommandLineInterface{
             var stackValue = TopValue;
             if(stackValue is not IValueSetter valueSetter){
                 if(!IgnoreInvalidSetBehaviour)
-                    throw new CommandExecuteException($"cannot assign value to <{stackValue.typeName}> near \"{node.DebugInfo}\"");
+                    throw new CommandExecuteException($"cannot assign value to <{stackValue.stackType}> near \"{node.DebugInfo}\"");
                 Execute(node.children[1]);
                 return;
             }
@@ -1258,7 +1375,7 @@ namespace RedSaw.CommandLineInterface{
                 }
                 throw new CommandExecuteException($"cannot parse \"{inputContainer.inputStr}\" to type \"{valueSetter.ValueType}\" near \"{node.DebugInfo}\"");
             }else{
-                throw new CommandExecuteException($"cannot assign <{stackValue.typeName}> to \"{stackValue.typeName}\" near \"{node.DebugInfo}\"");
+                throw new CommandExecuteException($"cannot assign <{stackValue.stackType}> to \"{stackValue.stackType}\" near \"{node.DebugInfo}\"");
             }
             SetProperty(valueSetter, value, node.DebugInfo);
         }
@@ -1271,7 +1388,7 @@ namespace RedSaw.CommandLineInterface{
             Execute(node.children[0]);
             var stackValue = TopValue;
             if( stackValue is not IValueGetter valueGetter){
-                throw new CommandExecuteException($"cannot get element from <{stackValue.typeName}> near \"{node.DebugInfo}\"");
+                throw new CommandExecuteException($"cannot get element from <{stackValue.stackType}> near \"{node.DebugInfo}\"");
             }
             object instance = valueGetter.GetValue() 
                 ?? throw new CommandExecuteException($"cannot get element from \"null\" near \"{node.DebugInfo}\"");
@@ -1299,7 +1416,7 @@ namespace RedSaw.CommandLineInterface{
                 _stack.Push(StackValue.Wrap(result));
                 return;
             }
-            throw new CommandExecuteException($"<{stackValue.typeName}> cannot be index of \"{instanceType}\" near \"{node.DebugInfo}\"");
+            throw new CommandExecuteException($"<{stackValue.stackType}> cannot be index of \"{instanceType}\" near \"{node.DebugInfo}\"");
         }
 
         void ExecuteSetElement(SyntaxTree node, ExecuteStatus status){
@@ -1307,7 +1424,7 @@ namespace RedSaw.CommandLineInterface{
             Execute(node.children[1]);
             var stackValue = TopValue;
             if( stackValue is not IValueGetter indexGetter ){
-                throw new CommandExecuteException($"<{stackValue.typeName}> cannot be index near \"{node.DebugInfo}\"");
+                throw new CommandExecuteException($"<{stackValue.stackType}> cannot be index near \"{node.DebugInfo}\"");
             }
             object indexValue = indexGetter.GetValue() 
                 ?? throw new CommandExecuteException($"null cannot be index \"{node.DebugInfo}\"");
@@ -1319,7 +1436,7 @@ namespace RedSaw.CommandLineInterface{
             Execute(node.children[0]);
             stackValue = TopValue;
             if( stackValue is not IValueGetter instanceGetter){
-                throw new CommandExecuteException($"cannot set element of <{stackValue.typeName}> near \"{node.DebugInfo}\"");
+                throw new CommandExecuteException($"cannot set element of <{stackValue.stackType}> near \"{node.DebugInfo}\"");
             }
             object instance = instanceGetter.GetValue() 
                 ?? throw new CommandExecuteException($"cannot set element of null near \"{node.DebugInfo}\"");
@@ -1330,14 +1447,14 @@ namespace RedSaw.CommandLineInterface{
             if( elementType == null ){
                 isArray = false;
                 elementType = VirtualMachineUtils.GetElementTypeOfDict(instance, indexValue.GetType()) ?? 
-                throw new CommandExecuteException($"cannot set element of <{stackValue.typeName}> near \"{node.DebugInfo}\"");
+                throw new CommandExecuteException($"cannot set element of <{stackValue.stackType}> near \"{node.DebugInfo}\"");
             }
 
             // get value user want to set accordding to element type
             Execute(node.children[2], new ExecuteStatus{ requiredType = elementType });
             stackValue = TopValue;
             if( stackValue is not IValueGetter valueGetter ){
-                throw new CommandExecuteException($"cannot set <{stackValue.typeName}> as element of {instance.GetType()} near \"{node.DebugInfo}\"");
+                throw new CommandExecuteException($"cannot set <{stackValue.stackType}> as element of {instance.GetType()} near \"{node.DebugInfo}\"");
             }
             object value = valueGetter.GetValue();
             if( isArray ){

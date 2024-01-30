@@ -454,6 +454,127 @@ namespace RedSaw.CommandLineInterface{
             }
             return null;
         }
+    
+
+
+        /// <summary>
+        /// check if target propertyInfo is static and only return true if both getter and setter are static
+        /// </summary>
+        public static bool IsStatic(this PropertyInfo propertyInfo){
+
+            var getter = propertyInfo.GetGetMethod();
+            if( getter != null && getter.IsStatic ) 
+                return true;
+            var setter = propertyInfo.GetSetMethod();
+            if( setter != null && setter.IsStatic ) 
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// create a stack property for given propertyInfo
+        /// </summary>
+        public static StackProperty CreateStackProperty(this PropertyInfo propertyInfo, string name){
+
+            if( !propertyInfo.IsStatic() ) return null;
+            if( propertyInfo.GetIndexParameters().Length > 0 ) return null;
+            if( propertyInfo.SetMethod == null ){
+                if( propertyInfo.GetMethod == null ) return null;
+                return new StackPropertyPropertyOnlyGetter(name, null, propertyInfo);
+            }
+            if( propertyInfo.GetMethod == null ){
+                return new StackPropertyPropertyOnlySetter(name, null, propertyInfo);
+            }
+            return new StackPropertyProperty(name, null, propertyInfo);
+        }
+
+        /// <summary>
+        /// create a stack property for given propertyInfo
+        /// </summary>
+        public static StackProperty CreateStackProperty(this PropertyInfo propertyInfo, object instance, string name){
+
+            if( instance == null ) return propertyInfo.CreateStackProperty(name);
+            if( propertyInfo.GetIndexParameters().Length > 0 ) return null;
+            if( propertyInfo.SetMethod == null ){
+                if( propertyInfo.GetMethod == null ) return null;
+                return new StackPropertyPropertyOnlyGetter(name, instance, propertyInfo);
+            }
+            if( propertyInfo.GetMethod == null ){
+                return new StackPropertyPropertyOnlySetter(name, instance, propertyInfo);
+            }
+            return new StackPropertyProperty(name, instance, propertyInfo);
+        }
+
+        /// <summary>
+        /// create a stack property for given propertyInfo
+        /// </summary>
+        public static StackProperty CreateStackProperty(this PropertyInfo propertyInfo, string name, string description, string tag){
+
+            if( !propertyInfo.IsStatic() ) return null;
+            if( propertyInfo.GetIndexParameters().Length > 0 ) return null;
+            if( propertyInfo.SetMethod == null ){
+                if( propertyInfo.GetMethod == null ) return null;
+                return new StackPropertyPropertyOnlyGetter(name, description, tag, null, propertyInfo);
+            }
+            if( propertyInfo.GetMethod == null ){
+                return new StackPropertyPropertyOnlySetter(name, description, tag, null, propertyInfo);
+            }
+            return new StackPropertyProperty(name, description, tag, null, propertyInfo);
+        }
+
+        /// <summary>
+        /// create a stack property for given propertyInfo
+        /// </summary>
+        public static StackProperty CreateStackProperty(this PropertyInfo propertyInfo, object instance, string name, string description, string tag){
+
+            if( instance == null ) return propertyInfo.CreateStackProperty(name, description, tag);
+            if( propertyInfo.GetIndexParameters().Length > 0 ) return null;
+            if( propertyInfo.SetMethod == null ){
+                if( propertyInfo.GetMethod == null ) return null;
+                return new StackPropertyPropertyOnlyGetter(name, description, tag, instance, propertyInfo);
+            }
+            if( propertyInfo.GetMethod == null ){
+                return new StackPropertyPropertyOnlySetter(name, description, tag, instance, propertyInfo);
+            }
+            return new StackPropertyProperty(name, description, tag, instance, propertyInfo);
+        }
+
+        /// <summary>
+        /// create a stack property for given fieldInfo
+        /// </summary>
+        public static StackProperty CreateStackProperty(this FieldInfo fieldInfo, string name){
+
+            if( fieldInfo.IsStatic ) return new StackPropertyField(name, null, fieldInfo);
+            return null;
+        }
+
+        /// <summary>
+        /// create a stack property for given fieldInfo
+        /// </summary>
+        public static StackProperty CreateStackProperty(this FieldInfo fieldInfo, object instance, string name){
+
+            if( instance == null ) return fieldInfo.CreateStackProperty(name);
+            return new StackPropertyField(name, instance, fieldInfo);
+        }
+
+        /// <summary>
+        /// create a stack callable from given methodInfo
+        /// </summary>
+        public static StackCallable CreateStackCallable(this MethodInfo methodInfo){
+
+            if( methodInfo.IsStatic ) return new StackMethod(null, methodInfo);
+            return null;
+        }
+
+        /// <summary>
+        /// create a stack callable from given methodInfo
+        /// </summary>
+        public static StackCallable CreateStackCallable(this MethodInfo methodInfo, object instance){
+
+            if( instance == null ) return methodInfo.CreateStackCallable();
+            return new StackMethod(instance, methodInfo);
+        }
     }
 
 }

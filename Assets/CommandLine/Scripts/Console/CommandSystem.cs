@@ -20,7 +20,9 @@ using UnityEngine;
 
 namespace RedSaw.CommandLineInterface{
 
-    /// <summary> command, usually represent by an static method </summary>
+    /// <summary> 
+    /// command, usually represent by an static method 
+    /// </summary>
     public class Command : StackMethod{
 
         public readonly string name;
