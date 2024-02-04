@@ -217,7 +217,7 @@ namespace RedSaw.CommandLineInterface{
         public CommandSystem(
 
             float scoreThresholdCommand = 0.3f,
-            float scoreThresholdVariable = 0.2f,
+            float scoreThresholdVariable = 0.1f,
             float scoreThresholdType = 0.1f,
             int typeReflectionQueryCache = 20,
             int commandQueryCacheCapacity = 20,
