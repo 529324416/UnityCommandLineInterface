@@ -4,27 +4,46 @@ namespace RedSaw.CommandLineInterface{
 
     public static class CLIUtils{
 
-        /// <summary>calculate distance between two strings</summary>
-        /// <param name="q">string 1</param>
-        /// <param name="option">string 2</param>
-        public static int LevenshteinDistance(string q, string option){
-            
-            int[,] matrix = new int[q.Length + 1, option.Length + 1];
-            for (int i = 0; i <= q.Length; i++){
-                for (int j = 0; j <= option.Length; j++){
-                    if (i == 0){
-                        matrix[i, j] = j;
-                    }
-                    else if (j == 0){
-                        matrix[i, j] = i;
-                    }else{
-                        int cost = (q[i - 1] == option[j - 1]) ? 0 : 1;
-                        matrix[i, j] = Math.Min(Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1), matrix[i - 1, j - 1] + cost);
-                    }
+        public static int GetEditDistance(string X, string Y)
+        {
+            int m = X.Length;
+            int n = Y.Length;
+    
+            int[][] T = new int[m + 1][];
+            for (int i = 0; i < m + 1; ++i) {
+                T[i] = new int[n + 1];
+            }
+    
+            for (int i = 1; i <= m; i++) {
+                T[i][0] = i;
+            }
+            for (int j = 1; j <= n; j++) {
+                T[0][j] = j;
+            }
+    
+            int cost;
+            for (int i = 1; i <= m; i++) {
+                for (int j = 1; j <= n; j++) {
+                    cost = X[i - 1] == Y[j - 1] ? 0: 1;
+                    T[i][j] = Math.Min(Math.Min(T[i - 1][j] + 1, T[i][j - 1] + 1),
+                            T[i - 1][j - 1] + cost);
                 }
             }
-            return matrix[q.Length, option.Length];
+    
+            return T[m][n];
         }
+    
+        public static float FindSimilarity(string x, string y) {
+            if (x == null || y == null) return 0;
+    
+            float maxLength = Math.Max(x.Length, y.Length);
+            if (maxLength > 0) {
+                // optionally ignore case if needed
+                return (maxLength - GetEditDistance(x, y)) / maxLength;
+            }
+            return 1.0f;
+        }
+ 
 
         public static int SimpleFilter(string q, string option){
 

@@ -708,6 +708,14 @@ namespace RedSaw.CommandLineInterface{
             return null;
         }
 
+        public Type GetCallableType(string name){
+                
+            if( callables.TryGetValue(name, out var callable) ){
+                return callable.Instance?.GetType();
+            }
+            return null;
+        }
+
         void SetProperty(IValueSetter propertyHandle, object value, string DebugInfo){
 
             /* in any situation, local variable would receive value */

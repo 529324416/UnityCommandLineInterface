@@ -438,19 +438,8 @@ namespace RedSaw.CommandLineInterface{
                 return;
             }
 
-            /* hide options panel when there's no text or no commands found */
-            if(text == null || text.Length == 0 || text.Contains(' ')){
-                if(renderer.IsAlternativeOptionsActive){
-                    renderer.IsAlternativeOptionsActive = false;
-                }
-                return;
-            }
-
-            // var result = commandSystem.
-            //     QueryCommands(text, alternativeCommandCount, CLIUtils.SimpleFilter);
-
-            var result = commandSystem.
-                GetCurrentSuggestions(text, alternativeCommandCount, CLIUtils.SimpleFilter);
+            string queryText = renderer.InputTextToCursor;
+            var result = commandSystem.GetCurrentSuggestions(queryText, alternativeCommandCount, CLIUtils.FindSimilarity);
 
             if(result.Length == 0){
                 if(renderer.IsAlternativeOptionsActive){
@@ -478,7 +467,7 @@ namespace RedSaw.CommandLineInterface{
         public void OnSubmit(string text){
 
             if(renderer.IsAlternativeOptionsActive && selector.GetCurrentSelection(out string selection)){
-                renderer.InputText = commandSystem.TakeSuggestion(renderer.InputText, selection);
+                renderer.InputTextToCursor = commandSystem.TakeSuggestion(renderer.InputTextToCursor, selection);
                 renderer.IsAlternativeOptionsActive = false;
                 renderer.ActivateInput();
                 renderer.SetInputCursorPosition(renderer.InputText.Length);

@@ -57,6 +57,7 @@ namespace RedSaw.CommandLineInterface{
         public readonly Token[] tokens;
         public readonly string[] sourceBuffer;
         public readonly Token this[int index] => tokens[index];
+        public readonly Token LastToken => tokens[^1];
 
         public LexerResult(string source, Token[] tokens, string[] sourceBuffer){
 

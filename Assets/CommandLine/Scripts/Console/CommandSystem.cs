@@ -216,6 +216,9 @@ namespace RedSaw.CommandLineInterface{
         /// </param>
         public CommandSystem(
 
+            float scoreThresholdCommand = 0.3f,
+            float scoreThresholdVariable = 0.2f,
+            float scoreThresholdType = 0.1f,
             int typeReflectionQueryCache = 20,
             int commandQueryCacheCapacity = 20,
             int variableQueryCacheCapacity = 20,
@@ -232,8 +235,11 @@ namespace RedSaw.CommandLineInterface{
                 ReceiveValueFromNonStringType,
                 TreatVoidAsNull
             );
-            charAutomaton = new(vm.GetPropertyType);
+            charAutomaton = new(vm.GetPropertyType, vm.GetCallableType);
 
+            this.scoreThresholdCommand = Math.Clamp(scoreThresholdCommand, 0, 1);
+            this.scoreThresholdVariable = Math.Clamp(scoreThresholdVariable, 0, 1);
+            this.scoreThresholdType = Math.Clamp(scoreThresholdType, 0, 1);
             QC_command = new(commandQueryCacheCapacity);
             QC_variable = new(variableQueryCacheCapacity);
             QC_type = new(typeReflectionQueryCache);
@@ -254,8 +260,6 @@ namespace RedSaw.CommandLineInterface{
             }
             
         }
-
-
     }
 
     #region About Virtual Machine
@@ -263,7 +267,9 @@ namespace RedSaw.CommandLineInterface{
 
         readonly Lexer lexer;
         readonly SyntaxAnalyzer syntaxAnalyzer;
-
+        readonly float scoreThresholdCommand;
+        readonly float scoreThresholdVariable;
+        readonly float scoreThresholdType;
         readonly QueryCache<Suggestion> QC_command;
         readonly QueryCache<Suggestion> QC_variable;
         readonly QueryCache<Suggestion> QC_type;
@@ -295,9 +301,10 @@ namespace RedSaw.CommandLineInterface{
         /// <summary>
         /// get current suggestions
         /// </summary>
-        public Suggestion[] GetCurrentSuggestions(string currentText, int count, Func<string, string, int> scoreFunc){
+        public Suggestion[] GetCurrentSuggestions(string currentText, int count, Func<string, string, float> scoreFunc){
 
             var queryStatus = charAutomaton.Input(currentText);
+            // UnityEngine.Debug.Log(charAutomaton.CurrentStatus);
             // UnityEngine.Debug.Log(queryStatus);
 
             lastQueryStr = queryStatus.queryStr;
@@ -349,7 +356,7 @@ namespace RedSaw.CommandLineInterface{
         /// <param name="count">the count of commands you want to query</param>
         /// <param name="scoreFunc">score function</param>
         /// <returns>return a group of commands</returns>
-        public Suggestion[] QueryCommands(string query, int count, Func<string, string, int> scoreFunc, string tag = null){
+        public Suggestion[] QueryCommands(string query, int count, Func<string, string, float> scoreFunc, string tag = null){
 
             query ??= string.Empty;
 
@@ -361,7 +368,7 @@ namespace RedSaw.CommandLineInterface{
             var bestChoices = vm.AllCallables
             .Where( s => s is Command command && command.CompareTag(tag) )
             .Select(s => new {value = s, score = scoreFunc(query, s.Name)})
-            .Where(s => s.score > 0)
+            .Where(s => s.score > scoreThresholdCommand)
             .OrderByDescending(s => s.score)
             .Take(Math.Max(1, count));
 
@@ -373,7 +380,7 @@ namespace RedSaw.CommandLineInterface{
             return result;
         }
 
-        public Suggestion[] QueryVariable(string query, int count, Func<string, string, int> scoreFunc, string tag = null){
+        public Suggestion[] QueryVariable(string query, int count, Func<string, string, float> scoreFunc, string tag = null){
 
             query ??= string.Empty;
 
@@ -383,6 +390,7 @@ namespace RedSaw.CommandLineInterface{
             var bestChoices = vm.AllProperties
             .Where( s => s.CompareTag(tag) )
             .Select( s => new { value = s, score = scoreFunc(query, s.Name )})
+            .Where(s => s.score > scoreThresholdVariable)
             .OrderByDescending( s => s.score )
             .Take(Math.Max(1, count));
             
@@ -391,7 +399,7 @@ namespace RedSaw.CommandLineInterface{
             return result;
         }
 
-        public Suggestion[] QueryType(string query, Type type, int count, Func<string, string, int> scoreFunc){
+        public Suggestion[] QueryType(string query, Type type, int count, Func<string, string, float> scoreFunc){
 
             query ??= string.Empty;
 
@@ -399,6 +407,7 @@ namespace RedSaw.CommandLineInterface{
             if(QC_type.GetCache(queryDetailInfo, out var result))return result;
             var bestChoices = type.GetMembers()
             .Select( s => new { value = s, score = scoreFunc(query, s.Name) })
+            .Where(s => s.score > scoreThresholdType)
             .OrderByDescending( s => s.score )
             .Take(Math.Max(1, count));
 
@@ -406,14 +415,6 @@ namespace RedSaw.CommandLineInterface{
             QC_type.Cache(queryDetailInfo, result);
             return result;
         }
-    }
-    #endregion
-
-
-    #region About Logs
-    public partial class CommandSystem{
-
-
     }
     #endregion
 
@@ -520,7 +521,7 @@ namespace RedSaw.CommandLineInterface{
         // /// <param name="count">the count of commands you want to query</param>
         // /// <param name="scoreFunc">score function</param>
         // /// <returns>return a group of commands</returns>
-        // public static Command[] QueryCommands(string query, int count, Func<string, string, int> scoreFunc, string tag = null){
+        // public static Command[] QueryCommands(string query, int count, Func<string, string, float> scoreFunc, string tag = null){
 
         //     /* ensure that query must be a valid string */
         //     if(query == null || query.Length == 0)return new Command[0];

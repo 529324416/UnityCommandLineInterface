@@ -50,6 +50,9 @@ namespace RedSaw.CommandLineInterface{
             /// <summary>input text</summary>
             string InputText{ get; set; }
 
+            /// <summary>input text to selection</summary>
+            string InputTextToCursor{ get; set; }
+
             /// <summary>focus on input field</summary>
             void Focus();
 

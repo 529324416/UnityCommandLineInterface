@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.EditorTools;
 using UnityEngine;
 
 namespace RedSaw.CommandLineInterface.UnityImpl{
@@ -6,27 +7,31 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
     /// <summary>the final wrapper of CommandConsoleSystem build in Unity</summary>
     public class GameConsole : MonoBehaviour{
 
+        [Header("Initialize Parameters")]
         [SerializeField] 
         private GameConsoleRenderer consoleRenderer;
 
-        [SerializeField, Tooltip("static parameter, at least 100")] 
-        private int outputCapacity = 400;
-
-        [SerializeField, Tooltip("static parameter, at least 1")] 
+        [SerializeField, Tooltip("the capacity of input history, at least 1")] 
         private int inputHistoryCapacity = 20;
 
-        [SerializeField, Tooltip("static parameter, alternative command options count, at least 1")]
+        [SerializeField, Tooltip("the capacity of command query cache, at least 1")]
+        private int commandQueryCacheCapacity = 20;
+
+        [SerializeField, Tooltip("alternative command options count, at least 1")]
         private int alternativeCommandCount = 8;
 
-        [SerializeField, Tooltip("static parameter, should output with time information of [HH:mm:ss]")] 
+        [SerializeField, Tooltip("should output with time information of [HH:mm:ss]")] 
         private bool shouldOutputWithTime = true;
 
-        [SerializeField, Tooltip("static parameter, should record failed command input")] 
+        [SerializeField, Tooltip("should record failed command input")] 
         private bool shouldRecordFailedCommand = true;
 
-        [SerializeField, Tooltip("static parameter, use default command?")]
-        private bool useDefaultCommand = true;
+        [SerializeField, Tooltip("should receive unity message")]
+        private bool shouldReceiveUnityMessage = true;
 
+        [SerializeField, Tooltip("[debug] output virtual machine exception call stack")]
+        private bool shouldOutputVMExceptionStack = false;
+        
         ConsoleController<LogType> console;
 
         void Awake(){
@@ -41,15 +46,21 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             console = new ConsoleController<LogType>(
                 consoleRenderer, 
                 new UserInput(),
-                commandQueryCacheCapacity:inputHistoryCapacity,
+
+                inputHistoryCapacity:inputHistoryCapacity,
+                commandQueryCacheCapacity:commandQueryCacheCapacity,
                 alternativeCommandCount:alternativeCommandCount,
                 shouldRecordFailedCommand:shouldRecordFailedCommand,
-                outputWithTime:shouldOutputWithTime
+                outputWithTime:shouldOutputWithTime,
+                outputStackTraceOfCommandExecution:shouldOutputVMExceptionStack
             );
-            Application.logMessageReceived += UnityConsoleLog;
+            if( shouldReceiveUnityMessage ) Application.logMessageReceived += UnityConsoleLog;
         }
         void Update() => console.Update();
-        void OnDestroy() => Application.logMessageReceived -= UnityConsoleLog;
+        void OnDestroy(){
+            if( shouldReceiveUnityMessage ) 
+                Application.logMessageReceived -= UnityConsoleLog;
+        }
 
         void UnityConsoleLog(string msg, string stack, LogType type){
 

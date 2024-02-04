@@ -41,20 +41,13 @@ namespace RedSaw.CommandLineInterface{
 
         public override string ToString()
         {
-            switch(suggestionType){
-
-                case SuggestionType.Variable:
-                    return $"Variable -> \"{queryStr}\"";
-
-                case SuggestionType.Command:
-                    return $"Command -> \"{queryStr}\"";
-
-                case SuggestionType.Member:
-                    return $"Member -> \"{queryType.Name}.{queryStr}\"";
-
-                default:
-                    return "No Suggestions";
-            }
+            return suggestionType switch
+            {
+                SuggestionType.Variable => $"Variable -> \"{queryStr}\"",
+                SuggestionType.Command => $"Command -> \"{queryStr}\"",
+                SuggestionType.Member => $"Member -> \"{queryType.Name}.{queryStr}\"",
+                _ => "No Suggestions",
+            };
         }
     }
 
@@ -66,15 +59,24 @@ namespace RedSaw.CommandLineInterface{
     class InputBehaviourStateMachine{
         
         public readonly Stack<InputBehaviourState> stateStack;
-        private Func<string, Type> getVariableType;
+        private readonly Func<string, Type> getVariableType;
+        private readonly Func<string, Type> getCallableType;
         private InputBehaviourState currentState;
+
+        public string CurrentStatus{
+            get{
+                if( currentState == null ) return "<No State>";
+                return currentState.ToString();
+            }
+        }
 
         /// <summary> current suggestion </summary>
         public SuggestionQuery CurrentSuggestionQuery => currentState.GetSuggestion();
 
-        public InputBehaviourStateMachine(Func<string, Type> getVariableType){
+        public InputBehaviourStateMachine(Func<string, Type> getVariableType, Func<string, Type> getCallableType){
 
             this.getVariableType = getVariableType;
+            this.getCallableType = getCallableType;
             stateStack = new Stack<InputBehaviourState>();
             currentState = new IBS_Ready(this);
         }
@@ -84,11 +86,20 @@ namespace RedSaw.CommandLineInterface{
             if( type == null ) return new IBS_Unknown(this);
             return new IBS_Member(this, type);
         }
+        public InputBehaviourState TryGetCallableMemberState(string callableName){
+
+            var type = getCallableType(callableName);
+            if( type == null ) return new IBS_Unknown(this);
+            return new IBS_Member(this, type);
+        }
 
         public void StepForward(char c){
 
             var nextState = currentState.StepForward(c);
             if( nextState != currentState ){
+                if( nextState.ShouldCollapse ){
+                    stateStack.Pop();
+                }
                 stateStack.Push(currentState);
                 currentState = nextState;
             }
@@ -120,9 +131,17 @@ namespace RedSaw.CommandLineInterface{
     abstract class InputBehaviourState{
 
         protected readonly InputBehaviourStateMachine stateMachine;
+        public bool ShouldCollapse{ get; protected set; } = false;
 
-        public InputBehaviourState(InputBehaviourStateMachine stateMachine){
+        /// <summary>
+        /// mark if current state is after an assign operation
+        /// </summary>
+        public bool AfterAssign{ get; protected set; } = false;
+
+        public InputBehaviourState(InputBehaviourStateMachine stateMachine, bool afterAssign = false){
+
             this.stateMachine = stateMachine;
+            this.AfterAssign = afterAssign;
         }
 
         /// <summary>input new character and check if </summary>
@@ -138,32 +157,42 @@ namespace RedSaw.CommandLineInterface{
         /// <returns>current suggestion query</returns>
         public virtual SuggestionQuery GetSuggestion() => SuggestionQuery.None;
 
-        protected IBS_Wait Wait() => new IBS_Wait(stateMachine);
-        protected IBS_Unknown Unknown() => new IBS_Unknown(stateMachine);
-        protected IBS_Variable Variable() => new IBS_Variable(stateMachine);
+        protected IBS_Wait Wait() => new(stateMachine);
+        protected IBS_Unknown Unknown() => new(stateMachine);
+        protected IBS_Variable Variable() => new(stateMachine);
         protected InputBehaviourState VariableMember(string typeName) => stateMachine.TryGetVariableMemberState(typeName);
+        protected InputBehaviourState CommandMember(string commandName) => stateMachine.TryGetCallableMemberState(commandName);
         protected InputBehaviourState Member(Type type, string name){
+
             MemberInfo member = type.GetDefaultMember(name);
             if( member == null ){
                 return new IBS_Unknown(stateMachine);
             }
-            switch(member.MemberType){
-                case MemberTypes.Field:
-                    return new IBS_Member(stateMachine, ((FieldInfo)member).FieldType);
-                case MemberTypes.Property:
-                    return new IBS_Member(stateMachine, ((PropertyInfo)member).PropertyType);
-                default:
-                    return new IBS_Unknown(stateMachine);
-            }
+            return member.MemberType switch
+            {
+                MemberTypes.Field => new IBS_Member(stateMachine, ((FieldInfo)member).FieldType),
+                MemberTypes.Property => new IBS_Member(stateMachine, ((PropertyInfo)member).PropertyType),
+                _ => new IBS_Unknown(stateMachine),
+            };
         }
+        protected IBS_Command Callable(char firstChar, bool shouldCollapse = false, bool afterAssign = false){
+
+            return new IBS_Command(stateMachine, firstChar, shouldCollapse, afterAssign);
+        }
+        public override string ToString() => "<State>";
     }
 
     abstract class InputBehaviourStateWithInput : InputBehaviourState{
 
         public string CurrentInput{ get; protected set; } = string.Empty;
-        public InputBehaviourStateWithInput(InputBehaviourStateMachine stateMachine, string input = ""):base(stateMachine){
+        public InputBehaviourStateWithInput(
+            InputBehaviourStateMachine stateMachine, 
+            string input = "",
+            bool afterAssign = false
+        ):base(stateMachine, afterAssign){
             this.CurrentInput = input;
         }
+        public override string ToString() => $"<State: {CurrentInput}>";
     }
 
 
@@ -175,26 +204,84 @@ namespace RedSaw.CommandLineInterface{
         public override InputBehaviourState StepForward(char c)
         {
             switch(c){
-                case Lexer.VAR: return Variable();
-                default: return Unknown();
+                case Lexer.VAR:
+                    return Variable();
+
+                case Lexer.DOUBLE_QUOTE:
+                case Lexer.SINGLE_QUOTE:
+                    return new IBS_String(stateMachine, c);
+
+                case Lexer.UNDERLINE:
+                    return Callable(c, shouldCollapse:true, AfterAssign);
+
+                default:
+                    if( Lexer.IsWhiteSpace(c) ) return Wait();
+                    if( c == Lexer.UNDERLINE || char.IsLetter(c) ) return Callable(c);
+                    return Unknown();
             }
+
         }
         public override bool StepBackward() => false;
+        public override string ToString() => "<Ready>";
     }
 
     class IBS_Wait : InputBehaviourStateWithInput
     {
-        public IBS_Wait(InputBehaviourStateMachine stateMachine, string input = ""):base(stateMachine, input){}
+
+        public IBS_Wait(InputBehaviourStateMachine stateMachine, string input = ""):base(stateMachine, input){
+        }
+        public override InputBehaviourState StepForward(char c)
+        {
+            
+            switch( c ){
+                case Lexer.VAR:
+                    return Variable();
+
+                case Lexer.DOUBLE_QUOTE:
+                case Lexer.SINGLE_QUOTE:
+                    return new IBS_String(stateMachine, c);
+
+                default:
+                    if( Lexer.IsWhiteSpace(c) ) return Wait();
+                    if( char.IsLetter(c) || c == Lexer.UNDERLINE ) return Callable(c, shouldCollapse:true, AfterAssign);
+                    return Unknown();
+            }
+        }
+
+        public override bool StepBackward() => true;
+        public override string ToString() => $"<Wait>";
+    }
+
+
+    class IBS_Command : InputBehaviourStateWithInput{
+
+        public IBS_Command(
+            InputBehaviourStateMachine stateMachine, 
+            char firstChar, 
+            bool shouldCollapse = false,
+            bool afterAssign = false) : base(stateMachine, firstChar.ToString(), afterAssign){
+
+            CurrentInput = firstChar.ToString();
+            this.ShouldCollapse = shouldCollapse;
+        }
         public override InputBehaviourState StepForward(char c)
         {
             if( Lexer.IsWhiteSpace(c) ) return Wait();
-            switch(c){
-                case Lexer.VAR: return Variable();
-                
-                default: return Unknown();
+            if( c == Lexer.DOT ) return CommandMember(CurrentInput);
+            if( c == Lexer.UNDERLINE || char.IsLetterOrDigit(c) ){
+                CurrentInput += c;
+                return this;
             }
+            return Unknown();
         }
-        public override bool StepBackward() => true;
+        public override bool StepBackward()
+        {
+            if( CurrentInput.Length == 0 )return true;
+            CurrentInput = CurrentInput[..^1];
+            return false;
+        }
+        public override SuggestionQuery GetSuggestion() => new(SuggestionType.Command, CurrentInput);
+        public override string ToString() => $"<Command: {CurrentInput}>";
     }
 
 
@@ -218,6 +305,7 @@ namespace RedSaw.CommandLineInterface{
         {
             return --count < 0;
         }
+        public override string ToString() => "<Unknown>";
     }
 
     class IBS_Variable : InputBehaviourStateWithInput
@@ -247,24 +335,46 @@ namespace RedSaw.CommandLineInterface{
         public override bool StepBackward()
         {
             if( CurrentInput.Length == 0 )return true;
-            CurrentInput = CurrentInput.Substring(0, CurrentInput.Length - 1);
+            CurrentInput = CurrentInput[..^1];
             return false;
         }
         public override SuggestionQuery GetSuggestion() => new(SuggestionType.Variable, CurrentInput);
+        public override string ToString() => $"<Variable: {CurrentInput}>";
+    }
+
+    class IBS_String : InputBehaviourStateWithInput{
+
+        private readonly char quote;
+        public IBS_String(InputBehaviourStateMachine stateMachine, char quote, string input = "") : base(stateMachine, input){
+            this.quote = quote;
+        }
+        public override InputBehaviourState StepForward(char c)
+        {
+            if( c == quote ) return Wait();
+            CurrentInput += c;
+            return this;
+        }
+        public override bool StepBackward()
+        {
+            if( CurrentInput.Length == 0 )return true;
+            CurrentInput = CurrentInput[..^1];
+            return false;
+        }
+        public override string ToString() => $"<String: {CurrentInput}>";
     }
 
     class IBS_Member : InputBehaviourStateWithInput
     {
-        private Type queryType;
+        private readonly Type queryType;
         public IBS_Member(InputBehaviourStateMachine stateMachine, Type type) : base(stateMachine, string.Empty)
         {
-            this.queryType = type;
+            queryType = type;
         }
 
         public override bool StepBackward()
         {
             if( CurrentInput.Length == 0 )return true;
-            CurrentInput = CurrentInput.Substring(0, CurrentInput.Length - 1);
+            CurrentInput = CurrentInput[..^1];
             return false;
         }
 
@@ -277,7 +387,6 @@ namespace RedSaw.CommandLineInterface{
                 }
                 return Unknown();
             }
-
             if( char.IsLetterOrDigit(c) || c == Lexer.UNDERLINE ){
 
                 CurrentInput += c;
@@ -286,13 +395,16 @@ namespace RedSaw.CommandLineInterface{
 
                 return Member(queryType, CurrentInput);
             }
-            return Unknown();
+            return Callable(c);
         }
         public override SuggestionQuery GetSuggestion()
         {
             return new(SuggestionType.Member, CurrentInput, queryType);
         }
+        public override string ToString() => $"<Member: {CurrentInput}>";
     }
+
+
 
 
     /// <summary>
@@ -300,11 +412,15 @@ namespace RedSaw.CommandLineInterface{
     /// </summary>
     public class CharAutomaton{
 
-        private InputBehaviourStateMachine stateMachine;
+        private readonly InputBehaviourStateMachine stateMachine;
         private string lastInput = string.Empty;
+        public string CurrentStatus => stateMachine.CurrentStatus;
 
-        public CharAutomaton(Func<string, Type> getVariableType){
-            stateMachine = new InputBehaviourStateMachine(getVariableType);
+        public CharAutomaton(
+            Func<string, Type> getVariableType,
+            Func<string, Type> getCallableType
+        ){
+            stateMachine = new InputBehaviourStateMachine(getVariableType, getCallableType);
         }
 
         /// <summary>
@@ -317,7 +433,7 @@ namespace RedSaw.CommandLineInterface{
 
                 stateMachine.Reset();
                 lastInput = string.Empty;
-                return stateMachine.CurrentSuggestionQuery;
+                return SuggestionQuery.None;
             }
 
             /* input string is equal to last input, it maybe nothing change 
@@ -335,7 +451,7 @@ namespace RedSaw.CommandLineInterface{
 
                 /* add some new characters */
                 if(newInput.StartsWith(lastInput)){
-                    foreach(char c in newInput.Substring(lastInput.Length)){
+                    foreach(char c in newInput[lastInput.Length..]){
                         stateMachine.StepForward(c);
                     }
                     lastInput = newInput;
@@ -350,7 +466,7 @@ namespace RedSaw.CommandLineInterface{
             /* delete some characaters */
             if( newInput.Length < lastInput.Length ){
                 if(lastInput.StartsWith(newInput)){
-                    foreach(char c in lastInput.Substring(newInput.Length)){
+                    foreach(char _ in lastInput[newInput.Length..]){
                         stateMachine.StepBackward();
                     }
                     lastInput = newInput;
@@ -374,7 +490,7 @@ namespace RedSaw.CommandLineInterface{
     /// <summary>
     /// used to save suggestion information 
     /// </summary>
-    public struct Suggestion{
+    public readonly struct Suggestion{
 
         public readonly string primary;
         public readonly string description;
