@@ -27,7 +27,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         [SerializeField, Tooltip("static parameter, use default command?")]
         private bool useDefaultCommand = true;
 
-        ConsoleController console;
+        ConsoleController<LogType> console;
 
         void Awake(){
             if(consoleRenderer == null){
@@ -38,7 +38,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             gameObject.SetActive(true);
 
             /* intialize console */
-            console = new ConsoleController(
+            console = new ConsoleController<LogType>(
                 consoleRenderer, 
                 new UserInput(),
                 commandQueryCacheCapacity:inputHistoryCapacity,

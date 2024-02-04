@@ -30,6 +30,12 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             get => inputField.text;
             set => inputField.text = value;
         }
+        public string InputTextToCursor{
+            
+            get => inputField.text[..inputField.caretPosition];
+            set => inputField.text = value + inputField.text[inputField.caretPosition..];
+        }
+
         public bool IsAlternativeOptionsActive { 
             get => optionsPanel.gameObject.activeSelf;
             set => optionsPanel.gameObject.SetActive(value);
