@@ -2,16 +2,18 @@ using System;
 using UnityEditor.EditorTools;
 using UnityEngine;
 
-namespace RedSaw.CommandLineInterface.UnityImpl{
+namespace RedSaw.CommandLineInterface.UnityImpl
+{
 
     /// <summary>the final wrapper of CommandConsoleSystem build in Unity</summary>
-    public class GameConsole : MonoBehaviour{
+    public class GameConsole : MonoBehaviour
+    {
 
         [Header("Initialize Parameters")]
-        [SerializeField] 
+        [SerializeField]
         private GameConsoleRenderer consoleRenderer;
 
-        [SerializeField, Tooltip("the capacity of input history, at least 1")] 
+        [SerializeField, Tooltip("the capacity of input history, at least 1")]
         private int inputHistoryCapacity = 20;
 
         [SerializeField, Tooltip("the capacity of command query cache, at least 1")]
@@ -20,10 +22,10 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         [SerializeField, Tooltip("alternative command options count, at least 1")]
         private int alternativeCommandCount = 8;
 
-        [SerializeField, Tooltip("should output with time information of [HH:mm:ss]")] 
+        [SerializeField, Tooltip("should output with time information of [HH:mm:ss]")]
         private bool shouldOutputWithTime = true;
 
-        [SerializeField, Tooltip("should record failed command input")] 
+        [SerializeField, Tooltip("should record failed command input")]
         private bool shouldRecordFailedCommand = true;
 
         [SerializeField, Tooltip("should receive unity message")]
@@ -31,11 +33,13 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
 
         [SerializeField, Tooltip("[debug] output virtual machine exception call stack")]
         private bool shouldOutputVMExceptionStack = false;
-        
+
         ConsoleController<LogType> console;
 
-        void Awake(){
-            if(consoleRenderer == null){
+        void Awake()
+        {
+            if (consoleRenderer == null)
+            {
                 Debug.LogError("ConsoleRenderer is missing!!");
                 gameObject.SetActive(false);
                 return;
@@ -44,29 +48,32 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
 
             /* intialize console */
             console = new ConsoleController<LogType>(
-                consoleRenderer, 
+                consoleRenderer,
                 new UserInput(),
 
-                inputHistoryCapacity:inputHistoryCapacity,
-                commandQueryCacheCapacity:commandQueryCacheCapacity,
-                alternativeCommandCount:alternativeCommandCount,
-                shouldRecordFailedCommand:shouldRecordFailedCommand,
-                outputWithTime:shouldOutputWithTime,
-                outputStackTraceOfCommandExecution:shouldOutputVMExceptionStack
+                inputHistoryCapacity: inputHistoryCapacity,
+                commandQueryCacheCapacity: commandQueryCacheCapacity,
+                alternativeCommandCount: alternativeCommandCount,
+                shouldRecordFailedCommand: shouldRecordFailedCommand,
+                outputWithTime: shouldOutputWithTime,
+                outputStackTraceOfCommandExecution: shouldOutputVMExceptionStack
             );
-            if( shouldReceiveUnityMessage ) Application.logMessageReceived += UnityConsoleLog;
+            if (shouldReceiveUnityMessage) Application.logMessageReceived += UnityConsoleLog;
         }
         void Update() => console.Update();
-        void OnDestroy(){
-            if( shouldReceiveUnityMessage ) 
+        void OnDestroy()
+        {
+            if (shouldReceiveUnityMessage)
                 Application.logMessageReceived -= UnityConsoleLog;
         }
 
-        void UnityConsoleLog(string msg, string stack, LogType type){
+        void UnityConsoleLog(string msg, string stack, LogType type)
+        {
 
             console.Output(msg, GetHexColor(type));
         }
-        string GetHexColor(LogType type){
+        string GetHexColor(LogType type)
+        {
             return type switch
             {
                 LogType.Error or LogType.Exception or LogType.Assert => "#b13c45",

@@ -2,12 +2,14 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace RedSaw.CommandLineInterface{
+namespace RedSaw.CommandLineInterface
+{
 
     /// <summary>
     /// syntax tree code, tell VirualMachine how to execute given node
     /// </summary>
-    public enum SyntaxTreeCode{
+    public enum SyntaxTreeCode
+    {
 
         FACTOR_STRING,
         FACTOR_FLOAT,
@@ -33,7 +35,8 @@ namespace RedSaw.CommandLineInterface{
     /// <summary>
     /// syntax tree, tree type, and represent the whole execution logic
     /// </summary>
-    public class SyntaxTree{
+    public class SyntaxTree
+    {
 
         public readonly string data;
         public readonly SyntaxTreeCode opcode;
@@ -44,8 +47,10 @@ namespace RedSaw.CommandLineInterface{
         public bool IsLeaf => children.Length == 0;
 
         /// <summary>provide debug info about current node</summary>
-        public string DebugInfo{
-            get{
+        public string DebugInfo
+        {
+            get
+            {
                 return opcode switch
                 {
                     SyntaxTreeCode.OP_DOT => $"{L?.DebugInfo}.{R?.DebugInfo}",
@@ -69,32 +74,37 @@ namespace RedSaw.CommandLineInterface{
             }
         }
 
-        public SyntaxTree(SyntaxTreeCode opcode, string data){
+        public SyntaxTree(SyntaxTreeCode opcode, string data)
+        {
 
             this.opcode = opcode;
             this.data = data;
             this.children = Array.Empty<SyntaxTree>();
         }
-        public SyntaxTree(SyntaxTreeCode opcode, string data, SyntaxTree L){
+        public SyntaxTree(SyntaxTreeCode opcode, string data, SyntaxTree L)
+        {
 
             this.opcode = opcode;
             this.data = data;
-            this.children = new SyntaxTree[]{L};
+            this.children = new SyntaxTree[] { L };
         }
-        public SyntaxTree(SyntaxTreeCode opcode, string data, SyntaxTree L, SyntaxTree R){
+        public SyntaxTree(SyntaxTreeCode opcode, string data, SyntaxTree L, SyntaxTree R)
+        {
 
             this.opcode = opcode;
             this.data = data;
-            this.children = new SyntaxTree[]{L, R};
+            this.children = new SyntaxTree[] { L, R };
         }
-        public SyntaxTree(SyntaxTreeCode opcode, string data, SyntaxTree[] children){
+        public SyntaxTree(SyntaxTreeCode opcode, string data, SyntaxTree[] children)
+        {
 
             this.opcode = opcode;
             this.data = data;
             this.children = children;
         }
-        public override string ToString(){
-            if( data != null || data.Length > 0)return data;
+        public override string ToString()
+        {
+            if (data != null || data.Length > 0) return data;
             return opcode.ToString();
         }
     }
@@ -102,7 +112,8 @@ namespace RedSaw.CommandLineInterface{
     /// <summary>
     /// analyze lexer result and generate syntax tree
     /// </summary>
-    public class SyntaxAnalyzer{
+    public class SyntaxAnalyzer
+    {
 
         LexerResult lexerResult;
         int index;
@@ -118,7 +129,7 @@ namespace RedSaw.CommandLineInterface{
 
         public bool HasMore => index < Tokens.Length;
         public Token CurrentToken => Tokens[index];
-        public Token NextToken => Tokens[index ++];
+        public Token NextToken => Tokens[index++];
 
         /// <summary>
         /// analyze lexer result and generate syntax tree
@@ -126,10 +137,11 @@ namespace RedSaw.CommandLineInterface{
         /// <param name="lexerResult">lexer result</param>
         /// <returns>syntax tree</returns>
         /// <exception cref="CommandSyntaxException">when syntax error occured</exception>
-        public SyntaxTree Analyze(LexerResult lexerResult){
+        public SyntaxTree Analyze(LexerResult lexerResult)
+        {
 
             this.lexerResult = lexerResult;
-            
+
             index = 0;
             __command_latch = false;
             return NextExpr(true);
@@ -138,10 +150,12 @@ namespace RedSaw.CommandLineInterface{
         /// <summary>
         /// match current token type, if match, then move to next token
         /// </summary>
-        bool Match(TokenType tokenType){
+        bool Match(TokenType tokenType)
+        {
 
-            if(HasMore && CurrentToken.type == tokenType){
-                index ++;
+            if (HasMore && CurrentToken.type == tokenType)
+            {
+                index++;
                 return true;
             }
             return false;
@@ -149,54 +163,63 @@ namespace RedSaw.CommandLineInterface{
         /// <summary>
         /// only check if current token type is matched, don't move
         /// </summary>
-        bool PeekMatch(TokenType tokenType){
+        bool PeekMatch(TokenType tokenType)
+        {
             return HasMore && CurrentToken.type == tokenType;
         }
 
         /// <summary>
         /// check if token is Input and is Id legal
         /// </summary>
-        bool MatchId(out SyntaxTree factor){
-                
+        bool MatchId(out SyntaxTree factor)
+        {
+
             var token = CurrentToken;
-            if(token.type == TokenType.TK_INPUT && Lexer.IsId(TokenValues[token.sourceIdx])){
+            if (token.type == TokenType.TK_INPUT && Lexer.IsId(TokenValues[token.sourceIdx]))
+            {
                 factor = new SyntaxTree(SyntaxTreeCode.FACTOR_ID, TokenValues[token.sourceIdx]);
-                index ++;
+                index++;
                 return true;
             }
             factor = null;
             return false;
         }
-        SyntaxTree NextParameterList(){
+        SyntaxTree NextParameterList()
+        {
 
-            if(Match(TokenType.TK_R_PAREN))
+            if (Match(TokenType.TK_R_PAREN))
                 return new SyntaxTree(SyntaxTreeCode.FACTOR_PARAMS, string.Empty);
 
             __command_latch = true;
             List<SyntaxTree> parameters = new();
-            while(HasMore){
+            while (HasMore)
+            {
                 parameters.Add(NextExpr());
-                if(Match(TokenType.TK_R_PAREN))break;
-                if(Match(TokenType.TK_COMMA))continue;
+                if (Match(TokenType.TK_R_PAREN)) break;
+                if (Match(TokenType.TK_COMMA)) continue;
             }
             __command_latch = false;
             return new SyntaxTree(SyntaxTreeCode.FACTOR_PARAMS, string.Empty, parameters.ToArray());
         }
-        SyntaxTree NextParameterList_Command(){
+        SyntaxTree NextParameterList_Command()
+        {
 
             __command_latch = true;
             List<SyntaxTree> parameters = new();
-            while(HasMore){
-                if(Match(TokenType.TK_EOF))break;
+            while (HasMore)
+            {
+                if (Match(TokenType.TK_EOF)) break;
                 parameters.Add(NextExpr());
             }
             __command_latch = false;
             return new SyntaxTree(SyntaxTreeCode.FACTOR_PARAMS, string.Empty, parameters.ToArray());
         }
-        SyntaxTree NextFactor(){
+        SyntaxTree NextFactor()
+        {
 
             Token tk = NextToken;
-            switch(tk.type){
+            switch (tk.type)
+            {
 
                 case TokenType.TK_INT:
                     return new SyntaxTree(SyntaxTreeCode.FACTOR_INT, TokenValues[tk.sourceIdx]);
@@ -224,11 +247,13 @@ namespace RedSaw.CommandLineInterface{
                         all other input would be treated as command, if next token is '(', 
                         then treat as function call, otherwise treat as command
                     */
-                    if(Match(TokenType.TK_L_PAREN)){
+                    if (Match(TokenType.TK_L_PAREN))
+                    {
                         var functionCmd = new SyntaxTree(SyntaxTreeCode.FACTOR_INPUT, TokenValues[tk.sourceIdx]);
                         return new SyntaxTree(SyntaxTreeCode.OP_CALL, string.Empty, functionCmd, NextParameterList());
                     }
-                    if(__command_latch){
+                    if (__command_latch)
+                    {
                         return new SyntaxTree(SyntaxTreeCode.FACTOR_INPUT, TokenValues[tk.sourceIdx]);
                     }
                     var commandCall = new SyntaxTree(SyntaxTreeCode.FACTOR_INPUT, TokenValues[tk.sourceIdx]);
@@ -236,19 +261,23 @@ namespace RedSaw.CommandLineInterface{
 
                 case TokenType.TK_L_PAREN:
                     SyntaxTree expr = NextExpr();
-                    if(!Match(TokenType.TK_R_PAREN)){
+                    if (!Match(TokenType.TK_R_PAREN))
+                    {
                         throw new CommandSyntaxException($"Missing ')' near \"..{lexerResult.NearInfo(tk)}\"");
                     }
                     return expr;
             }
             throw new CommandSyntaxException($"Unexpected token {tk.type} near \"..{lexerResult.NearInfo(tk)}\"");
         }
-        SyntaxTree NextConverter(){
-            
+        SyntaxTree NextConverter()
+        {
+
             var factor = NextFactor();
-            if(Match(TokenType.TK_COLON)){
+            if (Match(TokenType.TK_COLON))
+            {
                 var currentTk = NextToken;
-                if(currentTk.type == TokenType.TK_STRING || currentTk.type == TokenType.TK_INPUT){
+                if (currentTk.type == TokenType.TK_STRING || currentTk.type == TokenType.TK_INPUT)
+                {
                     var opFactor = new SyntaxTree(SyntaxTreeCode.FACTOR_INPUT, TokenValues[currentTk.sourceIdx]);
                     var opConverter = new SyntaxTree(SyntaxTreeCode.OP_CVT, string.Empty, factor, opFactor);
                     return opConverter;
@@ -257,18 +286,23 @@ namespace RedSaw.CommandLineInterface{
             }
             return factor;
         }
-        SyntaxTree NextAccess(){
+        SyntaxTree NextAccess()
+        {
 
             SyntaxTree tmp = NextConverter();
-            while(HasMore){
+            while (HasMore)
+            {
                 int startPosition = CurrentToken.startIdx;
 
                 // dot
-                if( Match(TokenType.TK_DOT) ){
-                    if( MatchId(out var id) ){
+                if (Match(TokenType.TK_DOT))
+                {
+                    if (MatchId(out var id))
+                    {
 
                         // function call
-                        if( Match(TokenType.TK_L_PAREN) ){
+                        if (Match(TokenType.TK_L_PAREN))
+                        {
                             var callable = new SyntaxTree(SyntaxTreeCode.OP_DOT, string.Empty, tmp, id);
                             tmp = new SyntaxTree(SyntaxTreeCode.OP_CALL, string.Empty, callable, NextParameterList());
                             continue;
@@ -281,9 +315,11 @@ namespace RedSaw.CommandLineInterface{
                 }
 
                 // index
-                if( Match(TokenType.TK_L_BRACKET) ){
+                if (Match(TokenType.TK_L_BRACKET))
+                {
                     SyntaxTree expr = NextExpr();
-                    if( !Match(TokenType.TK_R_BRACKET) ){
+                    if (!Match(TokenType.TK_R_BRACKET))
+                    {
                         throw new CommandSyntaxException($"Missing ']' near \"..{lexerResult.NearInfo(startPosition, CurrentToken.endIdx)}\"");
                     }
                     tmp = new SyntaxTree(SyntaxTreeCode.OP_INDEX, string.Empty, tmp, expr);
@@ -293,16 +329,19 @@ namespace RedSaw.CommandLineInterface{
             }
             return tmp;
         }
-        public SyntaxTree NextExpr(bool isRoot = false){
+        public SyntaxTree NextExpr(bool isRoot = false)
+        {
 
             SyntaxTree access = NextAccess();
-            if(!HasMore || PeekMatch(TokenType.TK_EOF))
+            if (!HasMore || PeekMatch(TokenType.TK_EOF))
                 return access;
 
-            if( Match(TokenType.TK_ASSIGN) ){
-                
+            if (Match(TokenType.TK_ASSIGN))
+            {
+
                 // instance.fieldName = <expr>
-                if(access.opcode == SyntaxTreeCode.OP_DOT){
+                if (access.opcode == SyntaxTreeCode.OP_DOT)
+                {
                     SyntaxTree expr = NextExpr();
                     return new SyntaxTree(SyntaxTreeCode.OP_SET_FIELD, string.Empty, new SyntaxTree[]{
                         access.children[0],
@@ -312,7 +351,8 @@ namespace RedSaw.CommandLineInterface{
                 }
 
                 // instance["test"] = 10 or instance[10] = 10
-                if(access.opcode == SyntaxTreeCode.OP_INDEX){
+                if (access.opcode == SyntaxTreeCode.OP_INDEX)
+                {
                     SyntaxTree expr = NextExpr();
                     return new SyntaxTree(SyntaxTreeCode.OP_SET_ELEMENT, string.Empty, new SyntaxTree[]{
                         access.children[0],
@@ -323,7 +363,8 @@ namespace RedSaw.CommandLineInterface{
 
                 return new SyntaxTree(SyntaxTreeCode.OP_ASSIGN, string.Empty, access, NextExpr());
             }
-            if(isRoot){
+            if (isRoot)
+            {
                 throw new CommandSyntaxException($"Unexpected token {CurrentToken.type} near \"..{lexerResult.NearInfo(CurrentToken)}\"");
             }
             return access;

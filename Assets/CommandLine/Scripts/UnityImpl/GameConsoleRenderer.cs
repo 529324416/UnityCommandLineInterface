@@ -5,7 +5,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-namespace RedSaw.CommandLineInterface.UnityImpl{
+namespace RedSaw.CommandLineInterface.UnityImpl
+{
 
     /// <summary>default implementation of IConsoleRenderer with Unity legacy UI</summary>
     public class GameConsoleRenderer : MonoBehaviour, IConsoleRenderer
@@ -17,33 +18,39 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         private int outputPanelCapacity = 400;
         private int lineCount = 0;
 
-        public bool IsVisible { 
-            get => gameObject.activeSelf; 
-            set => gameObject.SetActive(value); 
+        public bool IsVisible
+        {
+            get => gameObject.activeSelf;
+            set => gameObject.SetActive(value);
         }
 
         public bool IsInputFieldFocus => inputField.isFocused;
         public int OutputPanelCapacity => outputPanelCapacity;
 
-        public string InputText{
+        public string InputText
+        {
 
             get => inputField.text;
             set => inputField.text = value;
         }
-        public string InputTextToCursor{
-            
+        public string InputTextToCursor
+        {
+
             get => inputField.text[..inputField.caretPosition];
             set => inputField.text = value + inputField.text[inputField.caretPosition..];
         }
 
-        public bool IsAlternativeOptionsActive { 
+        public bool IsAlternativeOptionsActive
+        {
             get => optionsPanel.gameObject.activeSelf;
             set => optionsPanel.gameObject.SetActive(value);
         }
-        public List<string> AlternativeOptions { 
+        public List<string> AlternativeOptions
+        {
             set => optionsPanel.SetOptions(value);
         }
-        public int AlternativeOptionsIndex { 
+        public int AlternativeOptionsIndex
+        {
             set => optionsPanel.SelectionIndex = value;
         }
 
@@ -55,7 +62,6 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         }
         IEnumerator DisableHighlight()
         {
-            // Debug.Log("Selected!");
 
             //Get original selection color
             Color originalTextColor = inputField.selectionColor;
@@ -78,14 +84,17 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
             inputField.selectionColor = originalTextColor;
         }
 
-        public void SetInputCursorPosition(int value){
+        public void SetInputCursorPosition(int value)
+        {
             inputField.caretPosition = Mathf.Clamp(value, 0, inputField.text.Length);
         }
 
-        public void MoveScrollBarToEnd(){
+        public void MoveScrollBarToEnd()
+        {
             StartCoroutine(MoveToLast());
         }
-        IEnumerator MoveToLast(){
+        IEnumerator MoveToLast()
+        {
             yield return null;
             GetComponentInChildren<ScrollRect>(true).verticalNormalizedPosition = 0;
         }
@@ -97,7 +106,8 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 so use Action<string> instead of UnityEvent<string>
             */
 
-            inputField.onSubmit.AddListener((string input) => {
+            inputField.onSubmit.AddListener((string input) =>
+            {
                 callback?.Invoke(input);
             });
         }
@@ -107,7 +117,8 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
                 cause maybe the implementation of the game console in Non-Unity GameEngine
                 so use Action<string> instead of UnityEvent<string>
             */
-            inputField.onValueChanged.AddListener((string input) => {
+            inputField.onValueChanged.AddListener((string input) =>
+            {
                 callback?.Invoke(input);
             });
         }
@@ -129,34 +140,41 @@ namespace RedSaw.CommandLineInterface.UnityImpl{
         }
         public void Output(string msg)
         {
-            try{
+            try
+            {
                 outputPanel.text += msg + "\n";
-                if(++ lineCount > outputPanelCapacity){
+                if (++lineCount > outputPanelCapacity)
+                {
                     outputPanel.text = outputPanel.text[(outputPanel.text.IndexOf('\n') + 1)..];
-                    lineCount --;
+                    lineCount--;
                 }
                 /* update outputPanel's size */
                 var generator = new TextGenerator();
                 var settings = outputPanel.GetGenerationSettings(outputPanel.rectTransform.sizeDelta);
-                outputPanel.rectTransform.sizeDelta = 
+                outputPanel.rectTransform.sizeDelta =
                 new Vector2(outputPanel.rectTransform.sizeDelta.x, generator.GetPreferredHeight(outputPanel.text, settings));
 
                 GetComponentInChildren<ScrollRect>().verticalNormalizedPosition = 0;
-            }catch(Exception){
+            }
+            catch (Exception)
+            {
                 Clear();
             }
         }
-        public void Output(string[] msgs){
+        public void Output(string[] msgs)
+        {
             Output(string.Concat(msgs, '\n'));
         }
         public void Output(string msg, string color = "#ffffff")
         {
             Output($"<color={color}>{msg}</color>");
         }
-        public void Output(string[] msgs, string color = "#ffffff"){
+        public void Output(string[] msgs, string color = "#ffffff")
+        {
 
             string msg = string.Empty;
-            foreach(string line in msgs){
+            foreach (string line in msgs)
+            {
                 msg += $"<color=\"{color}\">{line}</color>\n";
             }
             Output(msg);
