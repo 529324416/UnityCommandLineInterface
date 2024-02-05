@@ -25,191 +25,314 @@ https://github.com/529324416/UnityCommandLineInterface/assets/30776995/a2290fff-
 
 ## Usage
 
-### 1.How add custom commands
+## 1.Register Commands
 
-The system use System.Reflections to define and collect commands, you can define your commands by adding `Command` to a static method
+Register a command is easy, you just need to add an `Command` attribute to your static method.
 
-
-```c#
-[Command]
-static void MyCommand(){
-    UnityEngine.Debug.Log("hello world");
+```csharp
+[Command("my_cmd")]
+public static void SomeMethod(){
+	/* do something here .. */
 }
 ```
 
-to call this function, just input *`MyCommand`* to the console, and no more configures.
+but system also support to add instance method, but now system have a new feature **CommandProperty**, so it's meaningless to register instance method
 
-<div align=center>
-<img src="./Res/usage-part-1.png" style="zoom:80%" />
-</div>
+## 2.Execute Commands
 
-you can set name, description and tag for your commands
-
-```c#
-
-[Command("my_command")]
-static void DefinedCommandName(){
-    UnityEngine.Debug.Log("hello world");
-}
-
-[Command("with_desc", Desc = "add some descriptions here")]
-static void AddSomeDescriptions(){
-    UnityEngine.Debug.Log("hello world");
-}
-
-[Command("with_tag", Tag = "disable_for_user")]
-static void CommandWithTag(){
-    UnityEngine.Debug.Log("command is disabled for user");
-}
-
-[Command("with_args")]
-static void Add(int a, int b){
-    UnityEngine.Debug.Log(a + b);
-}
+command can be executed in two ways, the first way like this:
 
 ```
-
-### 2.How to add custom properties
-
-The CommandProperty is that you can visit on console by `@`, to register an command property, you just need to add an attribute named `CommandProperty` like this:
-
-```C#
-[CommandProperty]
-public static Player player;
+your_command args1 args2
 ```
 
-then you can visit it by `@player`, not only the field itself but also all its fields, properties and methods.
-
+but you can execute it like a method as well
 
 ```
-@player.Jump()
+your_command(args1, args2)
+```
+
+the first way keep it easy to execute a command, and the second way provide the ability to visit the member of return value looks like below.
+
+```
+get_enemy("slime").Jump()
+```
+
+## 3.Console Variable
+
+the new console supports you to register a console variable and access it through `@`, this would make the overall command system very free, assuming that you have an object like this :
+
+```csharp
+public class Player : MonoBehaviour{
+
+	public int health = 100;
+
+	public void Jump(){
+		// code for jump..
+	}
+}
+```
+you can setup a static variable, and add an `CommandProperty` attribute for it to register a console variable
+
+```csharp
+public class Player: MonoBehaviour{
+
+	[CommandProperty("player")]
+	public static Player Instance;
+}
+```
+(you must write a Player instance into the static variable while the game start)
+
+Then you can access the inner member of the `Player`, its all rely on C#'s Reflection System, you can use the commands like below:
+
+```
 @player.health = 100
-@player.tag = "something"
+@player.Jump()
 ```
 
-and any other command need the property as a parameter.
+Similarly, anywhere you need a variable, you can use `@` to reference the variable you need, for example, as a parameter to other commands
 
 ```
-some_command @player
+@enemy.Atk(@player)
 ```
 
-the `@` is a syntax design which try to find the CommandProperty defined by you, but if we try to assign value to an command property doesn't existed, then the system would created a temp local variable. it would be cleared after quitting the game.
+the `CommandProperty` can be added to a Field or a Property, this means the console variable can return different value, like "the Npc nearest to player"
 
-```
-@pos = @player.pos
-print @pos          // write @player.pos to @pos
-@player.pos = @pos  // set back
-```
 
-### 3.How to add value parser
-
-Maybe we need to set some values in different type instead of some common types like string or int, but the system is not a completed Programming Language, so it cannot defined value on console, but you can register ValueParser for you can easy parse values to target type.
-for example, while we input `@player.pos = xxx`, assume that `pos` is a value of type `UnityEngine.Vector3`, you can register a ValueParse like this:
-
-```C#
-[CommandValueParser(typeof(Vector3), Alias = "v3")]
-public static bool ParseVector3(string input, out object data){
-    string[] result= input.Trim(new char[]{'(', ')'}).Split(',');
-    if(result.Length == 3){
-        if( float.TryParse(result[0], out float x) && 
-            float.TryParse(result[1], out float y) && 
-            float.TryParse(result[2], out float z)){
-
-            data = new Vector3(x, y, z);
-            return true;
-        }
-    }
-    data = default;
-    return false;
+```csharp
+[CommandProperty("nearest")]
+public static Npc NearestNpc{
+	get{
+		// code for getting nearest npc..
+	}
 }
 ```
 
-we send a `Type` parameter to tell system, the ValueParser is target on `Vector3`, and you can set an Alias for it, here is `v3`. of course, you can determine the detailed logic, for example, if you want to parse `"up"` to `Vector3.up`, you can do it like this :
+## 4.Access console variable
 
-```C#
-switch(input){
-    case "up":
-        data = Vector3.up;
-        return true;
-    /* ... */
-}
-```
-then, when system need `Vector3` as parameter or input, it will try to find a suitable ValueParser to handle it
+you can access or overwrite member of console variable through `.` or `[]`
 
 ```
-@player.pos = "1.0, 1.0, 1.0"
+@player.DoSomething()
+@player.buffs["buff_id"].AddTime(100)
+@enemies["slime"] = @new_slime
 ```
 
-according to your parse method, the command input would be like this:
+of course, the access is continues like normal programming language
 
 ```
-@player.pos = '1. 1. 1.'
-@player.pos = 'up'
-@player.pos = 'pt_revival'
+@something.member.sub_member["elements"].member.sub_member.field.function().member
 ```
 
-and if we just want to manually pointed the convert type, we can use `:` behind your string input like this
+the `[]` has some special, it would check if the target member is a sequence object like an Array or List, if it is, then it requires the expression inner `[]` to be an Interger value. 
+
+The Dictionary supports more key type, so the the judgment range of the dictionary would be wider.
 
 ```
-print "1. 1. 1.":v3
+@some_dict[@non_string_type] = get_something()
 ```
 
-maybe some wired, but it just work!
+for example, your dictionary key type is a non-string type, you can use other console variables as the key to read or write.
 
-## Advanced Usage and more features
+## 5.Value Parse
 
-### 1.Get command return value
+the normal value types supported by the CommandSystem has only 5.
 
-usually, command should called like this `commandName param1, param2 ..` but now, it can be called like a method, so you can get member of the return value like this:
 ```
-first_enemy("slime").attack(@player)
+string
+float
+int
+bool
+null
 ```
 
-### 2.Register instance method
+you can call these types as meta-type, it can be parsed by command system directly, generally speaking, it is sufficient to use. However, if you want the console to be able to parse different data types, you can do so by reigstering a value parser.
 
-usually, a command is a static method, but you can also register instance method and use them just like normal command. but you must visit VirtualMachine API directly. so I'm finding a more elegant way to do this.
+for example, the position of the player maybe a `Vector3` type, you may wish to set the position of player like this:
 
-```C#
-/// <summary>
-/// register callable to vm
-/// </summary>
-/// <param name="callable">the callable object</param>
-/// <param name="shouldOverwrite">if true, vm will overwrite callable with same name</param>
-public bool RegisterCallable(StackCallable callable, bool shouldOverwrite = true){
+```
+@player.pos = "1. 1. 1."
+```
 
-    if( callables.ContainsKey(callable.Name )) {
-        if(shouldOverwrite){
-            callables[callable.Name] = callable;
-            return true;
-        }
-        return false;
-    }
-    callables.Add(callable.Name, callable);
-    return true;
+Obviously, strings cannot be converted to `Vector3`, if you really want to do this, or if it's necessary to do so, you can register a 
+ValueParser as follows:
+
+```csharp
+
+[CommandValueParser(typeof(Vector3))]
+static bool ParseFunction(string input, out object data){
+	// code used to parse your input str
 }
 ```
 
-### 3.Output Event
+the parse logic is totally free by you. for example, you can parse 'revival_point' to `Vector3`
 
-the output method has no relationship with rendering now, so you can bind your own output method.
+```csharp
+static bool ParseFunction(string input, out object data){
+	if(input == "revival_point"){
+		data = Vector3.zero;
+		return true;
+	}
+	// other prase here ..
 
-so, the call chain is `UnityEngine.Debug.Log` -> `CommandSystem.Output` -> `YourCallback`
-
-```C#
-commandSystem.OnReceivedMessage += (Log log) => {
-    /* render the log output by your own logic */
+	data = default;
+	return false;
 }
 ```
 
-### 4.Sequence and IDictionary
-
-You can obtain list type objects such as sub elements of arrays or linked lists, and of course, dictionaries are the same.
+then you can use the command as follows:
 
 ```
-@player_equipments[0].unequip()
-@slots[0].place(@example_elem)
-@boss.weapons["heavy-gun"].trigger()
+@player.pos = "revival_point"
 ```
+
+the double quotation here is not necessary, but it's not suggestted to do like this. the system would first consider 'revival_point' to a command the try to execute it to get return value. the system would try parse it to `Vector3` only if it cannot find a command named 'revival_point'
+
+```
+@player.pos = revival_point
+```
+
+so you'd better not to use such ambiguous commands;
+
+the ValueParser usually used in some special suitations or complex data type, if you want to parse `Vector3`, the right way is registering a command like this:
+
+```csharp
+[Command("v3")]
+public static Vector3 BuildVector3(float x, float y, float z){
+	return new Vector3(x, y, z);
+}
+```
+
+and use it as follows
+
+```
+@player.pos = v3(0, 0, 0)
+```
+
+## 6.Register Debug Infos
+
+it you want to show the information of target object, for example, you just input '@player' to the console.
+
+```
+@player
+```
+
+the console could output the player informations likes below:
+
+![Untitled](./Res/Untitled.png)
+
+to fetch the information structure, you can add an `DebugInfo` attribute to target field or property 
+
+```csharp
+public class Player : MonoBehaviour{
+	
+	[DebugInfo]
+	public int health = 100;
+}
+```
+
+In this way, by entering `@player` to the console, you can directly obtain all DebugInfo of the player, and the output is as follows:
+
+```
+---------- Player start ----------
+>Player.health: 100
+---------- Player end ----------
+```
+
+you can set title and color for it.
+
+```csharp
+[DebugInfo("custom_title", Color = "#ff0000")]
+```
+
+### 6.1 Tracing Parent Class
+
+system would trace all its parent class, and output the DebugInfo of the original parent class to the target class one by one
+
+```csharp
+public class A{
+	[DebugInfo]
+	public int someInt = 999;
+}
+
+public class B{
+	[DebugInfo]
+	public float someFloat = 12.3;
+}
+
+public class C{
+	[DebugInfo]
+	public string someStr = "Hello World!";
+}
+```
+
+if you try to show the DebugInfo of C, you will get:
+
+```
+---------- C start ----------
+>A.someInt: 999
+>B.someFloat: 12.3
+>C.someStr: Hello World!
+---------- C end ----------
+```
+
+### 6.3 DebugInfo of complex member
+
+if the member which has beed reigstered as a DebugInfo and its also have inner DebugInfos, you can add an `DebugObject` attribute to the target class:
+
+```csharp
+public class A{
+	[DebugInfo("my_object")]
+	public B b = new B();
+}
+
+[DebugObject]
+public class B : MonoBehaviour{
+	[DebugInfo("name")]
+	public string Name => this.gameObject.name;
+
+	[DebugInfo]
+	public string age = 25;
+}
+```
+
+if you try to ouput A, you will get this:
+
+```
+---------- C start ----------
+>----[B]
+>    B.name: "instanceB"
+>    B.age: 25
+---------- C end ----------
+```
+
+However, in this way, there may be circular data reference, such as B referencing C and C referencing B again, so you can set and depth to limit the circular data reference, if depth exceeds the limitation, system will discard the more informations, the default depth limitation is 4
+
+## 7.Input Suggestion
+
+nothing to describe
+
+![Untitled](./Res/Untitled%20(1).png)
+
+## 8.Console Logs
+
+the new system has decoupled the output and render behaviours, this means the console only save the log but don't care how to render it. but you need to provide an logType to mark the logs. you can set it while you initialize the game console.
+
+```csharp
+/* intialize console */
+console = new ConsoleController<LogType>(
+    consoleRenderer,
+    new UserInput(),
+
+    inputHistoryCapacity: inputHistoryCapacity,
+    commandQueryCacheCapacity: commandQueryCacheCapacity,
+    alternativeCommandCount: alternativeCommandCount,
+    shouldRecordFailedCommand: shouldRecordFailedCommand,
+    outputWithTime: shouldOutputWithTime,
+    outputStackTraceOfCommandExecution: shouldOutputVMExceptionStack
+);
+```
+and you can decide where to save the logs.
 
 ## Other
 

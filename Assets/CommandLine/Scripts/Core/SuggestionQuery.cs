@@ -14,10 +14,10 @@ namespace RedSaw.CommandLineInterface
         /// <summary>search property or local variable</summary>
         Variable,
 
-        /// search member of a type
+        /// <summary>search member of a type</summary>
         Member,
 
-        /// search command
+        /// <summary>search command</summary>
         Command,
     }
 

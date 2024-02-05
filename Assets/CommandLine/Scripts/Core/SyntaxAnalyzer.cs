@@ -13,7 +13,6 @@ namespace RedSaw.CommandLineInterface
 
         FACTOR_STRING,
         FACTOR_FLOAT,
-        // FACTOR_TYPE,
         FACTOR_TRUE,
         FACTOR_FALSE,
         FACTOR_NULL,
@@ -62,7 +61,6 @@ namespace RedSaw.CommandLineInterface
                     SyntaxTreeCode.FACTOR_PARAMS => $"({string.Join(", ", children.Select(x => x.DebugInfo))})",
                     SyntaxTreeCode.FACTOR_FLOAT => $"{data}f",
                     SyntaxTreeCode.FACTOR_STRING => data,
-                    // SyntaxTreeCode.FACTOR_TYPE => data,
                     SyntaxTreeCode.FACTOR_TRUE => data,
                     SyntaxTreeCode.FACTOR_FALSE => data,
                     SyntaxTreeCode.FACTOR_NULL => data,

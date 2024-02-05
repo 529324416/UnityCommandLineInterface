@@ -3,7 +3,11 @@ using RedSaw.CommandLineInterface;
 
 public class MyClass{
 
+    [DebugInfo("health", Color = "#ff0000")]
     public int health = 100;
+
+    [DebugInfo("name")]
+    public string name = "hello world";
 
     public void Do(){
         Debug.Log("do something");

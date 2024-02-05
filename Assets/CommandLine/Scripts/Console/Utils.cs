@@ -4,7 +4,7 @@ namespace RedSaw.CommandLineInterface{
 
     public static class CLIUtils{
 
-        public static int GetEditDistance(string X, string Y)
+        static int GetEditDistance(string X, string Y)
         {
             int m = X.Length;
             int n = Y.Length;
@@ -33,6 +33,9 @@ namespace RedSaw.CommandLineInterface{
             return T[m][n];
         }
     
+        /// <summary>find similarity of two strings</summary>
+        /// <param name="x">string x</param>
+        /// <param name="y">string y</param>
         public static float FindSimilarity(string x, string y) {
             if (x == null || y == null) return 0;
     
@@ -42,15 +45,6 @@ namespace RedSaw.CommandLineInterface{
                 return (maxLength - GetEditDistance(x, y)) / maxLength;
             }
             return 1.0f;
-        }
- 
-
-        public static int SimpleFilter(string q, string option){
-
-            if(option.Contains(q)){
-                return q.Length;
-            }
-            return 0;
         }
 
         /// <summary>get time information of [HH:mm:ss]</summary>

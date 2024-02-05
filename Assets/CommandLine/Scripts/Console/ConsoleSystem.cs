@@ -482,9 +482,7 @@ namespace RedSaw.CommandLineInterface{
                 var ex = commandSystem.Execute(text, out object executeResult);
                 if( ex == null ){
                     inputHistory.Record(text);
-                    if( executeResult != null ){
-                        Output(executeResult.ToString());
-                    }
+                    OutputResult(executeResult);
                 }else{
                     if(shouldRecordFailedCommand)inputHistory.Record(text);
                     Output(ex.Message, "#f27a5f");
@@ -495,6 +493,21 @@ namespace RedSaw.CommandLineInterface{
             }
             renderer.MoveScrollBarToEnd();
             renderer.ActivateInput();
+        }
+
+        void OutputResult(object instance){
+
+            if( instance == null )return;
+            var debugInfos = DebugHelper.GetDebugInfos(instance);
+            if (debugInfos.Length == 0){
+                Output(instance.ToString());
+                return;
+            }
+            Output($"---------- {instance} start ----------");
+            foreach(var (message, color) in debugInfos){
+                Output(message, color);
+            }
+            Output($"---------- {instance} end ----------");
         }
     }
 }
