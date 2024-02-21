@@ -304,9 +304,6 @@ namespace RedSaw.CommandLineInterface{
         public Suggestion[] GetCurrentSuggestions(string currentText, int count, Func<string, string, float> scoreFunc){
 
             var queryStatus = charAutomaton.Input(currentText);
-            // UnityEngine.Debug.Log(charAutomaton.CurrentStatus);
-            // UnityEngine.Debug.Log(queryStatus);
-
             lastQueryStr = queryStatus.queryStr;
             return queryStatus.suggestionType switch
             {
@@ -411,7 +408,7 @@ namespace RedSaw.CommandLineInterface{
             .OrderByDescending( s => s.score )
             .Take(Math.Max(1, count));
 
-            result = bestChoices.Select( s => new Suggestion(s.value.Name, string.Empty)).ToArray();
+            result = bestChoices.Select( s => new Suggestion(s.value.Name, s.value.GetMemberTypeName())).ToArray();
             QC_type.Cache(queryDetailInfo, result);
             return result;
         }

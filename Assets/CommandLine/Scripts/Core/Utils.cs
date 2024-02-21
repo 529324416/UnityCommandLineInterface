@@ -537,7 +537,16 @@ namespace RedSaw.CommandLineInterface
             return null;
         }
 
+        public static string GetMemberTypeName(this MemberInfo memberInfo){
 
+            return memberInfo.MemberType switch
+            {
+                MemberTypes.Property => ((PropertyInfo)memberInfo).PropertyType.Name,
+                MemberTypes.Field => ((FieldInfo)memberInfo).FieldType.Name,
+                MemberTypes.Method => $"(..) -> {((MethodInfo)memberInfo).ReturnType.Name}",
+                _ => string.Empty,
+            };
+        }
 
         /// <summary>
         /// check if target propertyInfo is static 
