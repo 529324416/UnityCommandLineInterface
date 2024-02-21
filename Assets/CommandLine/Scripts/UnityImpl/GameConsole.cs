@@ -13,6 +13,9 @@ namespace RedSaw.CommandLineInterface.UnityImpl
         [SerializeField]
         private GameConsoleRenderer consoleRenderer;
 
+        [SerializeField]
+        private GameConsoleHeader headerBar;
+
         [SerializeField, Tooltip("the capacity of input history, at least 1")]
         private int inputHistoryCapacity = 20;
 
@@ -34,10 +37,19 @@ namespace RedSaw.CommandLineInterface.UnityImpl
         [SerializeField, Tooltip("[debug] output virtual machine exception call stack")]
         private bool shouldOutputVMExceptionStack = false;
 
+        [SerializeField, Tooltip("initialize on awake")]
+        private bool initializeOnAwake = true;
+
         ConsoleController<LogType> console;
 
         void Awake()
         {
+            if(initializeOnAwake)Init();
+        }
+
+        /// <summary>initialize console, call this function to initialize console </summary>
+        public void Init(){
+
             if (consoleRenderer == null)
             {
                 Debug.LogError("ConsoleRenderer is missing!!");
@@ -59,7 +71,12 @@ namespace RedSaw.CommandLineInterface.UnityImpl
                 outputStackTraceOfCommandExecution: shouldOutputVMExceptionStack
             );
             if (shouldReceiveUnityMessage) Application.logMessageReceived += UnityConsoleLog;
+
+
+            var parentTransform = (RectTransform)transform;
+            headerBar.Init(( pos ) => parentTransform.position += (Vector3)pos);
         }
+
         void Update() => console.Update();
         void OnDestroy()
         {
