@@ -11,14 +11,16 @@ namespace RedSaw.CommandLineInterface{
         [SerializeField] private Color hoverColor = Color.white;
         private Image headerImage;
         private Color normalColor;
-        private Action<Vector2> movCb;
+        private RectTransform movTarget;
+        private Vector2 movPos;
+        // private Action<Vector2> movCb;
 
         bool shouldMov;
         Vector2 startPos;
 
-        public void Init(Action<Vector2> movCb = null){
+        public void Init(RectTransform target){
 
-            this.movCb = movCb;
+            this.movTarget = target;
             headerImage = GetComponent<Image>();
             if( headerImage == null ){
                 throw new System.Exception("GameConsoleHeader must attach to a GameObject with Image component");
@@ -38,14 +40,14 @@ namespace RedSaw.CommandLineInterface{
         public void OnPointerDown(PointerEventData eventData)
         {
             shouldMov = true;
-            startPos = eventData.position;        
+            startPos = eventData.position;
+            movPos = movTarget.position;
         }
         public void OnPointerMove(PointerEventData eventData)
         {
             if(shouldMov){
-                Vector2 delta = eventData.position - startPos;
-                movCb?.Invoke(delta);
-                startPos = eventData.position;
+                Vector2 offset = eventData.position - startPos;
+                movTarget.position = movPos + offset;
             }
         }
 

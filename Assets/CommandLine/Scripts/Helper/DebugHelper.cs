@@ -91,45 +91,45 @@ namespace RedSaw.CommandLineInterface{
         /// </summary>
         static List<(string, string)> GetDebugInfos(Type type, object instance, HashSet<string> usedKeys, int depth){
 
-                if(type == null)return new List<(string, string)>();
-                List<(string, string)> debugInfos = new();
-                string typeName = type.Name;
-                string space = new(' ', depth * 4);
-                string typeSpace = new('-', depth * 4);
-                debugInfos.Add(($">{typeSpace}[{typeName}]", "#ffffff"));
+            if(type == null)return new List<(string, string)>();
+            List<(string, string)> debugInfos = new();
+            string typeName = type.Name;
+            string space = new(' ', depth * 4);
+            string typeSpace = new('-', depth * 4);
+            debugInfos.Add(($">{typeSpace}[{typeName}]", "#ffffff"));
 
-                /* read field infos */
-                foreach(FieldInfo fieldInfo in type.GetFields(BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance)){
-                    var attr = fieldInfo.GetCustomAttribute<DebugInfoAttribute>();
-                    if(attr != null){
-                        string title = attr.Key == string.Empty ? fieldInfo.Name : attr.Key;
-                        if(usedKeys.Contains(title))continue;
-                        usedKeys.Add(title);
-                        var subTypeAttr = fieldInfo.FieldType.GetCustomAttribute<DebugObjectAttribute>();
-                        if(subTypeAttr != null){
-                            debugInfos.AddRange(GetDebugInfos(fieldInfo.GetValue(instance), depth + 1));
-                            continue;
-                        }
-                        debugInfos.Add(($">{space}{typeName}.{title}: {fieldInfo.GetValue(instance)}", attr.Color));
+            /* read field infos */
+            foreach(FieldInfo fieldInfo in type.GetFields(BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance)){
+                var attr = fieldInfo.GetCustomAttribute<DebugInfoAttribute>();
+                if(attr != null){
+                    string title = attr.Key == string.Empty ? fieldInfo.Name : attr.Key;
+                    if(usedKeys.Contains(title))continue;
+                    usedKeys.Add(title);
+                    var subTypeAttr = fieldInfo.FieldType.GetCustomAttribute<DebugObjectAttribute>();
+                    if(subTypeAttr != null){
+                        debugInfos.AddRange(GetDebugInfos(fieldInfo.GetValue(instance), depth + 1));
+                        continue;
                     }
+                    debugInfos.Add(($">{space}{typeName}.{title}: {fieldInfo.GetValue(instance)}", attr.Color));
                 }
-
-                /* read property infos */
-                foreach(PropertyInfo propertyInfo in type.GetProperties(BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance)){
-                    var attr = propertyInfo.GetCustomAttribute<DebugInfoAttribute>();
-                    if(attr != null){
-                        string title = attr.Key == string.Empty ? propertyInfo.Name : attr.Key;
-                        if(usedKeys.Contains(title))continue;
-                        usedKeys.Add(title);
-                        var subTypeAttr = propertyInfo.PropertyType.GetCustomAttribute<DebugObjectAttribute>();
-                        if(subTypeAttr != null){
-                            debugInfos.AddRange(GetDebugInfos(propertyInfo.GetValue(instance), depth + 1));
-                            continue;
-                        }
-                        debugInfos.Add(($">{space}{typeName}.{title}: {propertyInfo.GetValue(instance)}", attr.Color));
-                    }
-                }
-                return debugInfos;
             }
+
+            /* read property infos */
+            foreach(PropertyInfo propertyInfo in type.GetProperties(BindingFlags.NonPublic|BindingFlags.Public|BindingFlags.Instance)){
+                var attr = propertyInfo.GetCustomAttribute<DebugInfoAttribute>();
+                if(attr != null){
+                    string title = attr.Key == string.Empty ? propertyInfo.Name : attr.Key;
+                    if(usedKeys.Contains(title))continue;
+                    usedKeys.Add(title);
+                    var subTypeAttr = propertyInfo.PropertyType.GetCustomAttribute<DebugObjectAttribute>();
+                    if(subTypeAttr != null){
+                        debugInfos.AddRange(GetDebugInfos(propertyInfo.GetValue(instance), depth + 1));
+                        continue;
+                    }
+                    debugInfos.Add(($">{space}{typeName}.{title}: {propertyInfo.GetValue(instance)}", attr.Color));
+                }
+            }
+            return debugInfos;
         }
+    }
 }

@@ -2098,6 +2098,8 @@ GameObject:
   - component: {fileID: 1711418774491845942}
   - component: {fileID: 1711418774491845940}
   - component: {fileID: 1711418774491845941}
+  - component: {fileID: 1711418774491845943}
+  - component: {fileID: 1711418774491845944}
   m_Layer: 5
   m_Name: Header
   m_TagString: Untagged
@@ -2159,6 +2161,49 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1711418774491845939}
   m_CullTransparentMesh: 1
+--- !u!114 &1711418774491845943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711418774491845939}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89c87e651b422b94d9463fa0ced6d3de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hoverColor: {r: 0.2, g: 0.23529412, b: 0.34117648, a: 1}
+--- !u!114 &1711418774491845944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711418774491845939}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.15686275, g: 0.16078432, b: 0.25490198, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &7775181169664748871
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2226,6 +2271,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   consoleRenderer: {fileID: 1711418774336333100}
+  headerBar: {fileID: 1711418774491845943}
   inputHistoryCapacity: 20
   commandQueryCacheCapacity: 20
   alternativeCommandCount: 8
@@ -2233,6 +2279,7 @@ MonoBehaviour:
   shouldRecordFailedCommand: 1
   shouldReceiveUnityMessage: 1
   shouldOutputVMExceptionStack: 0
+  initializeOnAwake: 1
 --- !u!224 &7920907123886839729
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2252,7 +2299,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 14, y: 259}
-  m_SizeDelta: {x: 384.6447, y: 189.8878}
+  m_SizeDelta: {x: 615.6949, y: 777.1403}
   m_Pivot: {x: 0, y: 0}
 --- !u!1 &7920907123886839730
 GameObject:

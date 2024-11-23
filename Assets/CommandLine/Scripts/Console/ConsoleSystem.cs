@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace RedSaw.CommandLineInterface{
 
@@ -498,11 +499,14 @@ namespace RedSaw.CommandLineInterface{
         void OutputResult(object instance){
 
             if( instance == null )return;
-            var debugInfos = DebugHelper.GetDebugInfos(instance);
-            if (debugInfos.Length == 0){
+            var type = instance.GetType();
+            var attr = type.GetCustomAttribute<DebugInfoAttribute>();
+            if( attr == null ){
                 Output(instance.ToString());
                 return;
             }
+            var debugInfos = DebugHelper.GetDebugInfos(instance);
+            if (debugInfos.Length == 0)return;
             Output($"---------- {instance} start ----------");
             foreach(var (message, color) in debugInfos){
                 Output(message, color);

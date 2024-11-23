@@ -73,8 +73,7 @@ namespace RedSaw.CommandLineInterface.UnityImpl
             if (shouldReceiveUnityMessage) Application.logMessageReceived += UnityConsoleLog;
 
 
-            var parentTransform = (RectTransform)transform;
-            headerBar.Init(( pos ) => parentTransform.position += (Vector3)pos);
+            headerBar.Init( (RectTransform)transform );
         }
 
         void Update() => console.Update();

@@ -67,7 +67,7 @@ namespace RedSaw.CommandLineInterface{
         /// <summary>collect all commands from given attribute type</summary>
         public static IEnumerable<Command> CollectCommands<T>() where T : CommandAttribute{
 
-            foreach(var type in Assembly.GetExecutingAssembly().GetTypes()){
+            foreach(var type in Assembly.GetCallingAssembly().GetTypes()){
                 foreach(var methodInfo in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)){
                     var attribute = methodInfo.GetCustomAttribute<T>();
                     if(attribute != null){
