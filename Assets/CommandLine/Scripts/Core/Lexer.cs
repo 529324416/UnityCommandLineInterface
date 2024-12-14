@@ -295,11 +295,11 @@ namespace RedSaw.CommandLineInterface{
                             case NULL:
                                 tokens.Add(new Token(TokenType.TK_NULL, -4, startIdx, index));
                                 break;
+                            default:
+                                tokens.Add(new Token(TokenType.TK_INPUT, tokenValues.Count, startIdx, index));
+                                tokenValues.Add(nextInput);
+                                break;
                         }
-
-                        // default
-                        tokens.Add(new Token(TokenType.TK_INPUT, tokenValues.Count, startIdx, index));
-                        tokenValues.Add(nextInput);
                         break;
                 }
             }

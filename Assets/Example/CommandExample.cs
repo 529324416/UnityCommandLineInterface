@@ -28,6 +28,14 @@ public static class CommandExample
         }
         Debug.Log(value);
     }
+    
+    [Command("debug")]
+    static void DebugTest(int a, bool v1, bool v2)
+    {
+        Debug.Log(a);
+        Debug.Log(v1);
+        Debug.Log(v2);
+    }
 
     [Command("add")]
     static int Add(int a, int b = 1){
